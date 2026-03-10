@@ -1,74 +1,89 @@
 // src/layouts/AdminLayout.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../../components/Admin/Sidebar";
 import Header from "../../components/Admin/Header";
-import { Menu } from "lucide-react"; // assuming you're using lucide-react icons
+import { Menu, X } from "lucide-react";
 
 const AdminLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);     // mobile drawer
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // desktop collapse
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Toggle mobile sidebar (drawer)
-  const toggleMobileSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  // Optional: close mobile sidebar on route change (if using react-router v6 data router)
+  // useEffect(() => {
+  //   setIsMobileOpen(false);
+  // }, [location.pathname]);
 
-  // Toggle desktop sidebar collapse
-  const toggleCollapse = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+  const toggleMobile = () => setIsMobileOpen((prev) => !prev);
+  const toggleCollapse = () => setIsCollapsed((prev) => !prev);
 
   return (
-    <div className="flex h-dvh bg-gray-50">
-      {/* Sidebar - Desktop (always visible, collapsible) */}
+    <div className="flex h-dvh flex-col bg-gray-50 dark:bg-gray-950 lg:flex-row">
+      {/* ─── Desktop Sidebar ──────────────────────────────────────── */}
       <aside
         className={`
-          hidden lg:block
-          ${isSidebarCollapsed ? "w-16" : "w-64"}
+          hidden lg:flex lg:flex-col
+          border-r border-gray-200 dark:border-gray-800
+          bg-white dark:bg-gray-900
+          shadow-sm
           transition-all duration-300 ease-in-out
-          bg-white border-r border-gray-200 shadow-sm
-          overflow-hidden
+          ${isCollapsed ? "w-16" : "w-64 xl:w-72"}
         `}
       >
-        <Sidebar collapsed={isSidebarCollapsed} />
+        <Sidebar collapsed={isCollapsed} />
       </aside>
 
-      {/* Mobile Sidebar Drawer */}
+      {/* ─── Mobile Drawer ────────────────────────────────────────── */}
       <div
         className={`
           fixed inset-y-0 left-0 z-50 lg:hidden
-          w-72 bg-white shadow-2xl
-          transform transition-transform duration-300 ease-in-out
-          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          w-72 sm:w-80
+          bg-white dark:bg-gray-900
+          shadow-2xl
+          transition-transform duration-300 ease-in-out
+          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <Sidebar collapsed={false} /> {/* Mobile version always full */}
+        <div className="flex h-16 items-center justify-end border-b border-gray-200 dark:border-gray-800 px-4">
+          <button
+            onClick={toggleMobile}
+            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            aria-label="Close menu"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        <Sidebar collapsed={false} mobile />
       </div>
 
-      {/* Mobile Backdrop */}
-      {isSidebarOpen && (
+      {/* Mobile backdrop */}
+      {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={toggleMobileSidebar}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={toggleMobile}
+          aria-hidden="true"
         />
       )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header - receives toggle functions */}
+      {/* ─── Main Area ────────────────────────────────────────────── */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {/* Header */}
         <Header
-          onMobileMenuToggle={toggleMobileSidebar}
+          onMobileToggle={toggleMobile}
           onCollapseToggle={toggleCollapse}
-          isCollapsed={isSidebarCollapsed}
+          isCollapsed={isCollapsed}
         />
 
-        {/* Main Content */}
+        {/* Content */}
         <main
           className={`
-            flex-1 p-4 sm:p-6 lg:p-8
-            overflow-y-auto
+            relative flex-1 overflow-y-auto
+            bg-gray-50/70 dark:bg-gray-950/50
             transition-all duration-300
-            ${isSidebarCollapsed ? "lg:ml-16" : "lg:ml-64"}
+            lg:${isCollapsed ? "ml-16" : "ml-64 xl:ml-72"}
           `}
         >
-          <div className="mx-auto max-w-[1400px]">
+          <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />
           </div>
         </main>

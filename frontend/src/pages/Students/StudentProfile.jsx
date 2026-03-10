@@ -1,293 +1,378 @@
-import { IndianRupee, Download, User, BookOpen, CreditCard, Award, LogOut } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  IndianRupee, Download, BookOpen, CreditCard,
+  Award, LogOut, History, CheckCircle2,
+  Calendar, Phone, Mail, LayoutDashboard,
+  Clock, ShieldCheck, ArrowUpRight, Wallet
+} from "lucide-react";
+import { getUserProfile } from "../../api/student.api.js";
+import { logoutUser } from "../../api/auth.api.js";
 
-const StudentProfile = () => {
+const StudentProfile = ({ userId }) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      let effectiveId = userId || JSON.parse(localStorage.getItem("user") || "{}")?._id;
+      if (!effectiveId) {
+        setLoading(false);
+        setError("Session expired. Please login again.");
+        return;
+      }
+
+      try {
+        const res = await getUserProfile(effectiveId);
+        if (res.data?.success) {
+          setData(res.data.data);
+        } else {
+          setError(res.data?.message || "Could not load profile data.");
+        }
+      } catch (err) {
+        setError("Network error: Please check your connection.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [userId]);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true); // Loading overlay dikhao
+    try {
+      // 1. Backend API Call (Cookies clear karne ke liye)
+      await logoutUser(); 
+    } catch (err) {
+      console.error("Backend logout failed, forcing local logout", err);
+    } finally {
+      // 2. Clear Local Storage (Hamesha execute hoga)
+      localStorage.clear();
+      
+      // 3. Redirect after a small delay for UX
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+    }
+  };
+  if (loading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error} />;
+
+  return <StudentProfileContent data={data} />;
+};
+
+const StudentProfileContent = ({ data }) => {
+  const { profile, student, enrollments = [] } = data;
+  const studentDisplayId = enrollments[0]?.enrollmentNo || "N/A";
+
+  const totalFee = enrollments.reduce((acc, e) => acc + (e.payment?.totalFee || 0), 0);
+  const paidAmount = enrollments.reduce((acc, e) => acc + (e.payment?.paidAmount || 0), 0);
+  const remaining = totalFee - paidAmount;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ================= NAVBAR ================= */}
-      <nav className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo + Institute Name */}
-            <div className="flex items-center gap-3">
-              {/* You can replace with your real logo SVG / PNG */}
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow">
-                <BookOpen className="w-6 h-6 text-indigo-700" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">
-                TechVision Institute
-              </span>
+    
+    <div className="min-h-screen bg-[#FDFDFF] text-slate-900 font-sans selection:bg-indigo-100 pb-20">
+      
+      {/* --- PREMIUM FLOATING NAVBAR --- */}
+      <nav className="sticky top-4 z-50 mx-auto max-w-5xl px-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl shadow-indigo-100/50 rounded-[2.5rem] px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-2 rounded-2xl shadow-lg shadow-indigo-200">
+              <ShieldCheck className="text-white w-5 h-5" />
             </div>
+            <span className="text-lg font-black tracking-tighter italic">TECHVISION</span>
+          </div>
 
-            {/* Right side - can add more links later */}
-            <div className="flex items-center gap-4">
-              <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors">
-                <User size={18} />
-                Profile
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors">
-                <LogOut size={18} />
-                Logout
-              </button>
-            </div>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => { localStorage.clear(); window.location.href = "/"; }}
+              className="group flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-red-500 transition-all"
+            >
+              <span className="hidden sm:block">SIGN OUT</span>
+              <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center md:text-left">
-          Student Profile
-        </h1>
+      <main className="max-w-6xl mx-auto px-6 mt-12">
 
-        <div className="space-y-6 md:space-y-8">
-          {/* ================= BASIC INFO CARD ================= */}
-{/* ================= RESPONSIVE BASIC INFO – MOBILE CARD | DESKTOP FULL WIDTH ================= */}
-<div className="w-full">
-  {/* Mobile → Card Layout | Desktop → Full Width Modern Layout */}
-  <div className="block md:hidden">
-    {/* MOBILE ONLY: Compact Card (exact wahi jo tumhe pasand aaya) */}
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all hover:shadow-xl max-w-md mx-auto">
-      <div className="bg-gradient-to-b from-indigo-50 to-white pt-8 pb-6 px-5 text-center">
-        <div className="relative inline-block">
-          <img
-            src="https://i.pravatar.cc/150?img=12"
-            alt="Rahul Sharma"
-            className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover mx-auto"
-          />
-          <span className="absolute bottom-2 right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></span>
-        </div>
-        <h2 className="mt-5 text-2xl font-bold text-gray-800">Rahul Sharma</h2>
-      </div>
-
-      <div className="px-6 pb-7 pt-4 space-y-4 text-gray-700">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-indigo-600 font-semibold text-sm">ID</span>
-          </div>
-          <div>
-            <p className="text-gray-500 text-xs uppercase tracking-wide">Roll Number</p>
-            <p className="font-medium">AKTU2024-001</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-gray-500 text-xs uppercase tracking-wide">Email</p>
-            <p className="font-medium break-all">rahul.sharma@example.com</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-gray-500 text-xs uppercase tracking-wide">Mobile</p>
-            <p className="font-medium">+91 9876543210</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-gray-50 px-6 py-4 text-center border-t">
-        <button className="text-indigo-600 hover:text-indigo-800 font-medium text-sm">
-          Edit Profile →
-        </button>
-      </div>
-    </div>
-  </div>
-
-  {/* DESKTOP ONLY: Full Width Modern Profile */}
-  <div className="hidden md:block">
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all hover:shadow-xl">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 h-32 relative">
-        {/* Optional pattern or overlay */}
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-      </div>
-
-      <div className="relative px-8 pt-8 pb-10 -mt-16">
-        <div className="flex items-end gap-8">
-          <div className="relative">
-            <img
-              src="https://i.pravatar.cc/150?img=12"
-              alt="Rahul Sharma"
-              className="w-36 h-36 rounded-full border-4 border-white shadow-xl object-cover"
-            />
-            <span className="absolute bottom-3 right-2 w-8 h-8 bg-green-500 border-4 border-white rounded-full"></span>
-          </div>
-
-          <div className="flex-1 pb-4">
-            <h2 className="text-3xl font-bold text-gray-800">Rahul Sharma</h2>
-            <p className="text-gray-600 mt-1">Full Stack Web Developer Student</p>
-          </div>
-
-          <button className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg">
-            Edit Profile
-          </button>
-        </div>
-
-        <div className="grid grid-cols-3 gap-8 mt-10 text-gray-700">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-              <span className="text-indigo-600 font-bold">ID</span>
+        {/* --- HERO SECTION --- */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-end mb-12">
+          <div className="lg:col-span-2">
+            <div className="inline-flex items-center gap-2 bg-indigo-50 px-4 py-1.5 rounded-full mb-4">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+              </span>
+              <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Active Student Portal</span>
             </div>
-            <div>
-              <p className="text-sm text-gray-500 uppercase tracking-wide">Roll Number</p>
-              <p className="font-semibold text-lg">AKTU2024-001</p>
-            </div>
+            <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none mb-4">
+              Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">{profile.name.split(' ')[0]}</span>
+            </h1>
+            <p className="text-slate-500 font-medium text-lg">Student ID: <span className="font-bold text-slate-800">{studentDisplayId}</span></p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 uppercase tracking-wide">Email</p>
-              <p className="font-semibold text-lg">rahul.sharma@example.com</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 uppercase tracking-wide">Mobile</p>
-              <p className="font-semibold text-lg">+91 9876543210</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-          {/* ================= COURSE INFO ================= */}
-          <div className="bg-white rounded-2xl shadow-md p-5 sm:p-7 transition-all hover:shadow-xl">
-            <div className="flex items-center gap-3 mb-5">
-              <BookOpen className="w-6 h-6 text-indigo-600" />
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-800">Course Information</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
+            <div className="bg-white border border-slate-100 p-4 rounded-3xl flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600"><CheckCircle2 size={24} /></div>
               <div>
-                <p className="font-semibold text-gray-600">Course</p>
-                <p className="text-gray-900">Full Stack Web Development</p>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-600">Duration</p>
-                <p className="text-gray-900">6 Months</p>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-600">Join Date</p>
-                <p className="text-gray-900">01 Feb 2025</p>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-600">Status</p>
-                <span className="text-green-600 font-medium">In Progress</span>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Courses</p>
+                <p className="text-xl font-black">{enrollments.length}</p>
               </div>
             </div>
+            <div className="bg-white border border-slate-100 p-4 rounded-3xl flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600"><Wallet size={24} /></div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Certificates</p>
+                <p className="text-xl font-black">{enrollments.filter(e => e.certificate?.issued).length}</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3.5 rounded-full transition-all duration-1000"
-                  style={{ width: "85%" }}
+        {/* --- MAIN GRID --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+          {/* LEFT COLUMN: CONTACT & FINANCE */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* PROFILE CARD */}
+            <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 opacity-50 transition-transform hover:scale-110"></div>
+              <div className="relative z-10">
+                <img
+                  src={profile.profilePhoto || `https://ui-avatars.com/api/?name=${profile.name}&background=6366f1&color=fff`}
+                  className="w-20 h-20 rounded-3xl object-cover mb-6 shadow-xl border-4 border-white"
+                  alt="profile"
                 />
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="font-medium text-gray-700">Progress</span>
-                <span className="font-bold text-indigo-700">85% Complete</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ================= PAYMENT INFO ================= */}
-          <div className="bg-white rounded-2xl shadow-md p-5 sm:p-7 transition-all hover:shadow-xl">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
-              <div className="space-y-4 flex-1">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-6 h-6 text-indigo-600" />
-                  <h3 className="text-xl sm:text-2xl font-semibold text-gray-800">Payment Information</h3>
-                </div>
-
-                <div className="space-y-3 text-gray-700">
-                  <p className="flex items-center gap-2">
-                    <IndianRupee size={18} className="text-green-600" />
-                    <span className="font-semibold">Total Fee:</span> ₹60,000
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <IndianRupee size={18} className="text-blue-600" />
-                    <span className="font-semibold">Paid:</span> ₹50,000
-                  </p>
-                  <p className="flex items-center gap-2 text-red-600 font-medium">
-                    <IndianRupee size={18} />
-                    <span className="font-semibold">Pending:</span> ₹10,000
-                  </p>
+                <div className="space-y-4">
+                  <ContactLine icon={<Mail />} value={profile.email} />
+                  <ContactLine icon={<Phone />} value={student.mobile} />
+                  <ContactLine icon={<Calendar />} value={new Date(student.dob).toLocaleDateString()} />
                 </div>
               </div>
+            </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-5 w-full sm:w-72 text-center">
-                <p className="font-bold text-red-700 text-lg">Current Month: Pending</p>
-                <p className="mt-3 text-sm bg-white text-gray-700 rounded-lg px-3 py-1.5 inline-block border border-gray-200">
-                  Payment Type: Per Month
-                </p>
+            {/* FINANCE CARD */}
+            <div className="bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl shadow-indigo-100 relative overflow-hidden group border border-white/5">
+              {/* Background Decorative Icon */}
+              <div className="absolute -bottom-6 -right-6 p-4 opacity-10 group-hover:rotate-12 group-hover:scale-110 transition-all duration-500">
+                <IndianRupee size={160} />
+              </div>
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-8">
+                  <p className="text-indigo-300 text-[10px] font-black uppercase tracking-[0.3em]">
+                    Billing Overview
+                  </p>
+                  <div className="bg-white/10 p-2 rounded-xl backdrop-blur-md">
+                    <CreditCard size={18} className="text-indigo-300" />
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  {/* 1. TOTAL COURSE VALUE */}
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                      Total Course Fee
+                    </p>
+                    <p className="text-4xl font-black tracking-tighter italic flex items-baseline gap-1">
+                      <span className="text-xl font-medium not-italic text-slate-500">₹</span>
+                      {totalFee.toLocaleString()}
+                    </p>
+                  </div>
+
+                  {/* 2. PROGRESS BAR (Optional but looks pro) */}
+                  <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-full transition-all duration-1000"
+                      style={{ width: `${(paidAmount / totalFee) * 100}%` }}
+                    />
+                  </div>
+
+                  {/* 3. BREAKDOWN GRID */}
+                  <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">
+                        Paid to Date
+                      </p>
+                      <p className="text-xl font-bold text-white flex items-center gap-1 leading-none">
+                        <span className="text-sm font-normal text-slate-500">₹</span>
+                        {paidAmount.toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1 text-right">
+                      <p className="text-[9px] font-black text-red-400 uppercase tracking-widest">
+                        Balance Due
+                      </p>
+                      <p className="text-xl font-bold text-white flex items-center justify-end gap-1 leading-none">
+                        <span className="text-sm font-normal text-slate-500">₹</span>
+                        {remaining.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Status Badge */}
+                <div className="mt-8 pt-4">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${remaining === 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${remaining === 0 ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                    {remaining === 0 ? 'Full Payment Settled' : 'Installments Pending'}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ================= CERTIFICATES ================= */}
-          <div className="bg-white rounded-2xl shadow-md p-5 sm:p-7 transition-all hover:shadow-xl">
-            <div className="flex items-center gap-3 mb-6">
-              <Award className="w-6 h-6 text-indigo-600" />
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-800">Certificates</h3>
+          {/* RIGHT COLUMN: COURSES & PAYMENTS */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* COURSES SECTION */}
+            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <BookOpen size={18} className="text-indigo-600" /> Active Learning
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {enrollments.map((e, idx) => (
+                  <CourseCard key={idx} enrollment={e} />
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Certificate 1 */}
-              <div className="border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
-                <h4 className="font-semibold text-lg text-gray-800 group-hover:text-indigo-700 transition-colors">
-                  Full Stack Web Development
-                </h4>
-                <p className="text-sm text-gray-500 mt-1">
-                  Issued on: 10 Aug 2025
-                </p>
-                <button className="mt-4 w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 active:scale-95 transition-all">
-                  <Download size={18} />
-                  Download
-                </button>
+            {/* PAYMENT LOGS */}
+            <div className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm">
+              <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                  <History size={18} className="text-indigo-600" /> Payment History
+                </h3>
+                <span className="text-[10px] font-bold bg-slate-100 px-3 py-1 rounded-full text-slate-500">RECENT LOGS</span>
               </div>
-
-              {/* Certificate 2 */}
-              <div className="border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group">
-                <h4 className="font-semibold text-lg text-gray-800 group-hover:text-indigo-700 transition-colors">
-                  Python Programming
-                </h4>
-                <p className="text-sm text-gray-500 mt-1">
-                  Issued on: 15 Aug 2025
-                </p>
-                <button className="mt-4 w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 active:scale-95 transition-all">
-                  <Download size={18} />
-                  Download
-                </button>
+              <div className="px-4 pb-4 overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4">Amount</th>
+                      <th className="px-6 py-4 text-right">Method</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {enrollments.flatMap(enr => enr.payment.history).map((p, i) => (
+                      <tr key={i} className="group hover:bg-slate-50 transition-all">
+                        <td className="px-6 py-5">
+                          <p className="text-sm font-bold text-slate-700">{new Date(p.date).toLocaleDateString()}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                          <p className="text-sm font-black text-indigo-600">₹{p.amount.toLocaleString()}</p>
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-lg group-hover:bg-white transition-colors">{p.method}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-
-              {/* You can add more certificate cards here */}
             </div>
           </div>
+
         </div>
+
+        {/* --- CERTIFICATES SECTION (BOTTOM WIDE) --- */}
+        <section className="mt-12">
+          <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 px-2">Earned Recognition</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {enrollments.filter(e => e.certificate?.issued).length > 0 ? (
+              enrollments.filter(e => e.certificate?.issued).map((e, i) => (
+                <CertificateCard key={i} e={e} />
+              ))
+            ) : (
+              <div className="col-span-full py-12 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] text-center">
+                <Award size={40} className="mx-auto text-slate-300 mb-2" />
+                <p className="text-slate-400 font-bold text-sm italic">Unlock certificates by completing courses</p>
+              </div>
+            )}
+          </div>
+        </section>
+
       </main>
     </div>
   );
 };
+
+// --- SUB-COMPONENTS ---
+
+const ContactLine = ({ icon, value }) => (
+  <div className="flex items-center gap-4 group">
+    <div className="text-indigo-500 bg-indigo-50 p-2 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all">
+      {React.cloneElement(icon, { size: 16 })}
+    </div>
+    <span className="text-sm font-bold text-slate-600 truncate">{value}</span>
+  </div>
+);
+
+const CourseCard = ({ enrollment }) => (
+  <div className="group bg-slate-50 hover:bg-white p-6 rounded-3xl border border-transparent hover:border-slate-100 hover:shadow-xl hover:shadow-indigo-100 transition-all duration-300">
+    <div className="flex justify-between items-start mb-4">
+      <div className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter ${enrollment.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+        {enrollment.status}
+      </div>
+      <ArrowUpRight size={18} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+    </div>
+    <h4 className="font-bold text-slate-800 text-lg mb-1 leading-tight">{enrollment.course.title}</h4>
+    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">ID: {enrollment.enrollmentNo}</p>
+    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+      <Calendar size={14} /> {new Date(enrollment.joined).toLocaleDateString()}
+    </div>
+  </div>
+);
+
+const CertificateCard = ({ e }) => (
+  <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-600 transition-all">
+    <div className="flex items-center gap-4">
+      <div className="bg-amber-50 p-3 rounded-2xl text-amber-600 group-hover:rotate-12 transition-transform">
+        <Award size={24} />
+      </div>
+      <div>
+        <h5 className="font-bold text-sm text-slate-800">{e.course.title}</h5>
+        <p className="text-[10px] text-slate-400 font-bold uppercase">Issued 2024</p>
+      </div>
+    </div>
+    <button className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all">
+      <Download size={18} />
+    </button>
+  </div>
+);
+
+const LoadingSkeleton = () => (
+  <div className="h-screen w-full flex items-center justify-center bg-white">
+    <div className="flex flex-col items-center gap-6">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-indigo-100 rounded-full"></div>
+        <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+      </div>
+      <p className="text-indigo-900 font-black text-xs tracking-[0.3em] uppercase animate-pulse">Initializing Portal</p>
+    </div>
+  </div>
+);
+
+const ErrorState = ({ message }) => (
+  <div className="h-screen w-full flex items-center justify-center bg-slate-50 px-6">
+    <div className="bg-white p-12 rounded-[3rem] shadow-2xl text-center max-w-sm border border-red-50">
+      <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+        <ShieldCheck size={40} />
+      </div>
+      <h2 className="text-2xl font-black text-slate-900 mb-2">Login Required</h2>
+      <p className="text-slate-500 text-sm mb-8 leading-relaxed">{message}</p>
+      <button onClick={() => window.location.href = '/'} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+        GO TO LOGIN
+      </button>
+    </div>
+  </div>
+);
 
 export default StudentProfile;
