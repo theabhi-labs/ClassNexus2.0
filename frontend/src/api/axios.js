@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: 'https://class-nexus-api-w5d9.onrender.com',
   withCredentials: true, // ✅ send httpOnly cookies automatically
 });
 
