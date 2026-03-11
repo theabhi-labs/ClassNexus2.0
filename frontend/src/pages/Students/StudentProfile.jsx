@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useParams } from "react-router-dom";
 import {
   IndianRupee, Download, BookOpen, CreditCard,
@@ -19,7 +18,14 @@ const StudentProfile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      let effectiveId = id || JSON.parse(localStorage.getItem("user") || "{}")?._id;
+      let effectiveId = (id && id !== "undefined") ? id : null;
+      if (!effectiveId) {
+        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        effectiveId = storedUser._id;
+      }
+
+      console.log("Fetching for ID:", effectiveId);
+
       if (!effectiveId) {
         setLoading(false);
         setError("Session expired. Please login again.");
@@ -34,25 +40,27 @@ const StudentProfile = () => {
           setError(res.data?.message || "Could not load profile data.");
         }
       } catch (err) {
+        console.error("API Error:", err);
         setError("Network error: Please check your connection.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchProfile();
-  }, [userId]);
+  }, [id]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true); // Loading overlay dikhao
     try {
       // 1. Backend API Call (Cookies clear karne ke liye)
-      await logoutUser(); 
+      await logoutUser();
     } catch (err) {
       console.error("Backend logout failed, forcing local logout", err);
     } finally {
       // 2. Clear Local Storage (Hamesha execute hoga)
       localStorage.clear();
-      
+
       // 3. Redirect after a small delay for UX
       setTimeout(() => {
         window.location.href = "/";
@@ -74,9 +82,9 @@ const StudentProfileContent = ({ data }) => {
   const remaining = totalFee - paidAmount;
 
   return (
-    
+
     <div className="min-h-screen bg-[#FDFDFF] text-slate-900 font-sans selection:bg-indigo-100 pb-20">
-      
+
       {/* --- PREMIUM FLOATING NAVBAR --- */}
       <nav className="sticky top-4 z-50 mx-auto max-w-5xl px-4">
         <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl shadow-indigo-100/50 rounded-[2.5rem] px-8 py-4 flex justify-between items-center">
@@ -88,11 +96,15 @@ const StudentProfileContent = ({ data }) => {
           </div>
 
           <div className="flex items-center gap-6">
+            // Isse use karo navbar mein
             <button
-              onClick={() => { localStorage.clear(); window.location.href = "/"; }}
+              onClick={handleLogout} // <--- handleLogout call karo
+              disabled={isLoggingOut}
               className="group flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-red-500 transition-all"
             >
-              <span className="hidden sm:block">SIGN OUT</span>
+              <span className="hidden sm:block">
+                {isLoggingOut ? "SIGNING OUT..." : "SIGN OUT"}
+              </span>
               <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
