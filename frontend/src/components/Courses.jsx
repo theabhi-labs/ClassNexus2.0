@@ -48,14 +48,14 @@ const PublicCourses = () => {
     <Element name="courses" className="bg-slate-50">
       <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          
+
           {/* Header Section */}
           <header className="text-center mb-16 space-y-4">
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
               Master the <span className="text-blue-600">Digital World</span>
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
-              Step into the future with hands-on training. From fundamentals to expert-level skills, 
+              Step into the future with hands-on training. From fundamentals to expert-level skills,
               we bridge the gap between learning and doing.
             </p>
           </header>
@@ -63,7 +63,7 @@ const PublicCourses = () => {
           {/* Courses Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
             {courses.slice(0, 6).map((course) => (
-              <article 
+              <article
                 key={course._id}
                 className="group relative bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 flex flex-col"
               >
@@ -77,14 +77,14 @@ const PublicCourses = () => {
                       e.target.src = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800";
                     }}
                   />
-                  
+
                   {/* Visual Quality Check Label */}
                   {!course.thumbnail?.includes("images.unsplash.com") && (
                     <div className="absolute inset-0 flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px]">
-                       <div className="bg-white/90 px-4 py-2 rounded-xl flex items-center gap-2 shadow-xl">
-                          <ImageOff className="w-4 h-4 text-orange-500" />
-                          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-tighter">Preview Optimized</span>
-                       </div>
+                      <div className="bg-white/90 px-4 py-2 rounded-xl flex items-center gap-2 shadow-xl">
+                        <ImageOff className="w-4 h-4 text-orange-500" />
+                        <span className="text-[10px] font-bold text-slate-700 uppercase tracking-tighter">Preview Optimized</span>
+                      </div>
                     </div>
                   )}
 
@@ -99,7 +99,7 @@ const PublicCourses = () => {
                   <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors leading-tight">
                     {course.title}
                   </h3>
-                  
+
                   <div className="flex flex-wrap gap-5 mb-6">
                     <div className="flex items-center text-slate-500 text-sm font-bold bg-slate-50 px-3 py-1 rounded-lg">
                       <Calendar className="w-4 h-4 mr-2 text-blue-500" />
@@ -112,8 +112,8 @@ const PublicCourses = () => {
                   </div>
 
                   <p className="text-slate-500 text-sm leading-relaxed mb-8 flex-grow font-medium">
-                    {course.description.length > 110 
-                      ? `${course.description.substring(0, 110)}...` 
+                    {course.description.length > 110
+                      ? `${course.description.substring(0, 110)}...`
                       : course.description}
                   </p>
 
@@ -125,12 +125,7 @@ const PublicCourses = () => {
                     >
                       Join Now
                     </button>
-                    <a
-                      href={`/courses/${course._id}`}
-                      className="inline-flex items-center justify-center border-2 border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 text-slate-700 font-bold py-4 px-4 rounded-2xl transition-all"
-                    >
-                      Details <Info className="w-4 h-4 ml-2 opacity-40" />
-                    </a>
+                    <a href={`/courses/${course._id}`} className="...">Details</a>
                   </div>
                 </div>
               </article>
@@ -139,13 +134,13 @@ const PublicCourses = () => {
 
           {/* Footer Call-to-Action */}
           <div className="mt-20 text-center">
-            <a
-              href="/courses"
+            <Link
+              to="/courses"
               className="inline-flex items-center gap-3 px-10 py-5 bg-white border border-slate-200 rounded-3xl text-slate-900 font-black text-lg hover:shadow-xl hover:border-blue-200 transition-all group"
             >
-              Explore all 50+ Specialized Courses 
+              Explore all 50+ Specialized Courses
               <ArrowRight className="w-6 h-6 text-blue-600 group-hover:translate-x-2 transition-transform" />
-            </a>
+            </Link>
           </div>
         </div>
 
