@@ -2,10 +2,13 @@ import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 
-const app = express()
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://class-nexus2-0.vercel.app"
+];
 app.use(cors({
-    origin: process.env.FRONTEND_URL ,
-    credentials: true
+  origin: allowedOrigins,
+  credentials: true
 }));
 
 
