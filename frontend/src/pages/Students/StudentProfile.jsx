@@ -252,6 +252,10 @@ const CourseCard = ({ enrollment }) => (
   </div>
 );
 
+<button onClick={onLogout} disabled={isLoggingOut}>
+     {isLoggingOut ? "SIGNING OUT..." : "SIGN OUT"}
+  </button>
+
 const LoadingSkeleton = () => (
   <div className="h-screen w-full flex items-center justify-center bg-white">
     <div className="flex flex-col items-center gap-6">
