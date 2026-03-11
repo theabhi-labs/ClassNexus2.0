@@ -126,7 +126,12 @@ const PublicCourses = () => {
                     >
                       Join Now
                     </button>
-                    <a href={`/courses/${course._id}`} className="...">Details</a>
+                    <Link
+                      to={`/courses/${course._id}`}
+                      className="inline-flex items-center justify-center border-2 border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 text-slate-700 font-bold py-4 px-4 rounded-2xl transition-all"
+                    >
+                      Details <Info className="w-4 h-4 ml-2 opacity-40" />
+                    </Link>
                   </div>
                 </div>
               </article>
