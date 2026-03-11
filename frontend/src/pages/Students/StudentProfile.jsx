@@ -17,7 +17,6 @@ const StudentProfile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      // 1. Check for valid ID from URL or LocalStorage
       let effectiveId = (id && id !== "undefined") ? id : null;
       if (!effectiveId) {
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -32,7 +31,6 @@ const StudentProfile = () => {
 
       try {
         const res = await getUserProfile(effectiveId);
-        // Backend data structured as: res.data.data = { profile, student, enrollments }
         if (res.data?.success) {
           setData(res.data.data);
         } else {
@@ -66,11 +64,11 @@ const StudentProfile = () => {
   if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorState message={error} />;
 
+  // Proper Prop Passing
   return <StudentProfileContent data={data} onLogout={handleLogout} isLoggingOut={isLoggingOut} />;
 };
 
 const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
-  // Safe Destructuring with Optional Chaining
   const profile = data?.profile || {};
   const student = data?.student || {};
   const enrollments = data?.enrollments || [];
@@ -78,14 +76,13 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
   const firstName = profile?.name ? profile.name.split(' ')[0] : "Student";
   const studentDisplayId = enrollments[0]?.enrollmentNo || "N/A";
 
-  // Financial Calculations
   const totalFee = enrollments.reduce((acc, e) => acc + (e.payment?.totalFee || 0), 0);
   const paidAmount = enrollments.reduce((acc, e) => acc + (e.payment?.paidAmount || 0), 0);
   const remaining = totalFee - paidAmount;
 
   return (
     <div className="min-h-screen bg-[#FDFDFF] text-slate-900 font-sans selection:bg-indigo-100 pb-20">
-      {/* --- PREMIUM FLOATING NAVBAR --- */}
+      {/* --- NAVBAR --- */}
       <nav className="sticky top-4 z-50 mx-auto max-w-5xl px-4">
         <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl shadow-indigo-100/50 rounded-[2.5rem] px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -107,7 +104,6 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
       </nav>
 
       <main className="max-w-6xl mx-auto px-6 mt-12">
-        {/* --- HERO SECTION --- */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-end mb-12">
           <div className="lg:col-span-2">
             <div className="inline-flex items-center gap-2 bg-indigo-50 px-4 py-1.5 rounded-full mb-4">
@@ -130,7 +126,7 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* LEFT COLUMN */}
+          {/* PROFILE INFO */}
           <div className="lg:col-span-4 space-y-8">
             <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden">
               <div className="relative z-10">
@@ -173,7 +169,7 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
             </div>
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* COURSES & PAYMENTS */}
           <div className="lg:col-span-8 space-y-8">
             <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
               <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-8">
@@ -207,7 +203,7 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
   );
 };
 
-// --- SUB-COMPONENTS (Small Helpers) ---
+// --- HELPER COMPONENTS ---
 const StatCard = ({ icon, label, value, color }) => (
   <div className="bg-white border border-slate-100 p-4 rounded-3xl flex items-center gap-4 shadow-sm">
     <div className={`p-3 bg-${color}-50 rounded-2xl text-${color}-600`}>{icon}</div>
@@ -251,10 +247,6 @@ const CourseCard = ({ enrollment }) => (
     </div>
   </div>
 );
-
-<button onClick={onLogout} disabled={isLoggingOut}>
-     {isLoggingOut ? "SIGNING OUT..." : "SIGN OUT"}
-  </button>
 
 const LoadingSkeleton = () => (
   <div className="h-screen w-full flex items-center justify-center bg-white">
