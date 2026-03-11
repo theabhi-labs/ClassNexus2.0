@@ -20,7 +20,6 @@ export const updateStudent = (id, data) => {
 
 export const getUserProfile = (id) => {
   const token = localStorage.getItem("token");
-  if (!token) throw new Error("Token missing");
 
   return api.get(`/students/${id}/profile`, {
     headers: { Authorization: `Bearer ${token}` },

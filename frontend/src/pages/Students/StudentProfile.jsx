@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useParams } from "react-router-dom";
 import {
   IndianRupee, Download, BookOpen, CreditCard,
   Award, LogOut, History, CheckCircle2,
@@ -9,7 +10,8 @@ import {
 import { getUserProfile } from "../../api/student.api.js";
 import { logoutUser } from "../../api/auth.api.js";
 
-const StudentProfile = ({ userId }) => {
+const StudentProfile = () => {
+  const { id } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,7 +19,7 @@ const StudentProfile = ({ userId }) => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      let effectiveId = userId || JSON.parse(localStorage.getItem("user") || "{}")?._id;
+      let effectiveId = id || JSON.parse(localStorage.getItem("user") || "{}")?._id;
       if (!effectiveId) {
         setLoading(false);
         setError("Session expired. Please login again.");
