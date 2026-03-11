@@ -3,13 +3,21 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://class-nexus2-0.vercel.app"
+  "https://class-nexus2-0.vercel.app",
+  "http://localhost:5173"  // Add your local dev URL
 ];
+
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true // if sending cookies/JWT in headers
 }));
+
 
 
 
