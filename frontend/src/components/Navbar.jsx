@@ -95,11 +95,67 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
             {/* Logo */}
-            <div className="flex-shrink-0 cursor-pointer" onClick={() => navigate("/")}>
-              <span className="text-2xl font-black text-indigo-600 flex items-center gap-2">
-                <span className="bg-indigo-600 text-white p-1 rounded-lg">🎓</span>
-                <span className="tracking-tight">EduPrime</span>
-              </span>
+            <div
+              className="flex-shrink-0 cursor-pointer group flex items-center gap-4"
+              onClick={() => navigate("/")}
+            >
+              {/* Larger Logo Container */}
+          <div className="relative flex items-center justify-center w-20 h-20 group cursor-pointer">
+  {/* Dynamic Purple Glow (Chamak) */}
+  <div className="absolute inset-0 bg-purple-600/30 blur-[25px] rounded-full animate-pulse group-hover:bg-purple-500/50 transition-all duration-700" />
+  
+  {/* Glassmorphism Background for Cap */}
+  <div className="absolute inset-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl group-hover:scale-110 transition-transform duration-500" />
+
+  <svg 
+    viewBox="0 0 100 100" 
+    className="relative w-16 h-16 drop-shadow-2xl transform transition-all duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Large Graduation Cap Design */}
+    <g>
+      {/* Top Diamond - Bada aur Bold */}
+      <path 
+        d="M10 40L50 20L90 40L50 60L10 40Z" 
+        className="fill-slate-900 group-hover:fill-indigo-950 transition-colors duration-300"
+      />
+      
+      {/* Cap Base (Niche ka hissa) */}
+      <path 
+        d="M25 48V62C25 62 35 70 50 70C65 70 75 62 75 62V48" 
+        className="fill-slate-800"
+      />
+
+      {/* Tassel (Sunehri Latkan) */}
+      <path 
+        d="M90 40V65" 
+        className="stroke-amber-400" 
+        strokeWidth="3" 
+        strokeLinecap="round" 
+      />
+      <circle cx="90" cy="68" r="4" className="fill-amber-500 animate-bounce group-hover:animate-none" />
+      
+      {/* Subtle Shine on Cap */}
+      <path 
+        d="M25 38L50 25L80 38" 
+        stroke="white" 
+        strokeWidth="0.5" 
+        fill="none" 
+        className="opacity-30"
+      />
+    </g>
+  </svg>
+</div>
+
+              {/* Typography Side */}
+              <div className="flex flex-col justify-center">
+                <h1 className="text-2xl md:text-3xl font-black tracking-tighter leading-none text-slate-800">
+                  JAS <span className="text-indigo-600">Computer</span>
+                </h1>
+                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400 mt-1">
+                  Learning Hub
+                </p>
+              </div>
             </div>
 
             {/* Desktop Menu - Hidden on Mobile */}
