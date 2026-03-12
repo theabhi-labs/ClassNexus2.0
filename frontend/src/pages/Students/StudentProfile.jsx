@@ -16,34 +16,39 @@ const StudentProfile = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      let effectiveId = (id && id !== "undefined") ? id : null;
-      if (!effectiveId) {
-        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-        effectiveId = storedUser._id;
-      }
-      if (!effectiveId) {
-        setLoading(false);
-        setError("Session expired. Please login again.");
-        return;
-      }
-      try {
-        const res = await getUserProfile(effectiveId);
-        if (res.data?.success) {
-          setData(res.data.data);
-        } else {
-          setError(res.data?.message || "Could not load profile data.");
-        }
-      } catch (err) {
-        console.error("API Error:", err);
-        setError("Network error: Please check your connection.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, [id]);
+  const fetchProfile = async () => {
+    // 1. Pehle check karein kya URL param mein valid ID hai (not "undefined" string)
+    let effectiveId = (id && id !== "undefined" && id.length > 5) ? id : null;
 
+    // 2. Agar URL mein nahi hai, toh localStorage se uthayein
+    if (!effectiveId) {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      effectiveId = storedUser._id || storedUser.id;
+    }
+
+    if (!effectiveId) {
+      setLoading(false);
+      setError("Session expired. Please login again.");
+      return;
+    }
+
+    try {
+      const res = await getUserProfile(effectiveId);
+      if (res.data?.success) {
+        setData(res.data.data);
+      } else {
+        setError(res.data?.message || "Student info not found.");
+      }
+    } catch (err) {
+      // Agar backend 404 status code bhej raha hai toh wo yahan aayega
+      const msg = err.response?.data?.message || "Profile not found in database.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchProfile();
+}, [id]);
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {

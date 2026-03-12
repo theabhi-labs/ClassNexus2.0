@@ -38,11 +38,16 @@ const Navbar = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return; 
+
       try {
         const res = await getCurrentUser();
-        setUser(res.data.data.user);
-      } catch {
+        setUser(res.data?.data?.user || res.data?.user); 
+      } catch (err) {
+        console.error("Auth Check Failed:", err);
         setUser(null);
+        localStorage.removeItem("token");
       }
     };
     fetchUser();
@@ -59,12 +64,20 @@ const Navbar = () => {
     setError("");
     try {
       const res = await loginUser(loginData);
-      setUser(res.data.data.user);
-      localStorage.setItem("token", res.data.data.accessToken);
+      
+      // Token aur User set karein
+      const userData = res.data?.data?.user || res.data?.user;
+      const token = res.data?.data?.accessToken || res.data?.accessToken;
+
+      if (token) localStorage.setItem("token", token);
+      setUser(userData);
+      
       setIsLoginOpen(false);
     } catch (err) {
-      setError(err.response?.data?.message || "Login Failed");
-    } finally { setLoading(false); }
+      setError(err.response?.data?.message || "Invalid Credentials");
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleSignupSubmit = async (e) => {

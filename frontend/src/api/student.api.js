@@ -18,15 +18,15 @@ export const updateStudent = (id, data) => {
   });
 };
 
-export const getUserProfile = (id) => {
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+export const getUserProfile = (id) => api.get(`/students/${id}/profile`);
 
-  return api.get(`/students/${id}/profile`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
-// Other APIs can remain the same if they don't require auth
 export const adminDashboardStudents = () => api.get("/students/admin-overview");
 export const getAllStudents = () => api.get("/students/getAllStudents");
 export const getStudentDetails = (studentId) => api.get(`/students/${studentId}`);
