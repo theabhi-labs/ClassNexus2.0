@@ -110,7 +110,7 @@ const Footer = () => {
               <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
             </div>
             <span className="text-[10px] md:text-xs font-medium text-slate-300">
-              Designed & Developed by <span className="text-blue-400 font-bold group-hover:underline">Your Name</span>
+              Designed & Developed by <span className="text-blue-400 font-bold group-hover:underline">Abhishek Yadav</span>
             </span>
           </a>
         </div>
