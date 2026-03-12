@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import Student from "../models/student.model.js";
 import Enrollment from "../models/enrollment.model.js";
@@ -104,106 +105,107 @@ const addStudent = asyncHandler(async (req, res) => {
 });
 
 export const getUserProfile = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ success: false, message: "Invalid User ID format" });
-        }
-
-        const user = await User.findById(userId).select("name email profilePhoto");
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User account not found" });
-        }
-
-        const student = await Student.findOne({ user: userId }).lean();
-        if (!student) {
-            return res.status(404).json({ success: false, message: "Student record not found for this user" });
-        }
-
-        const enrollments = await Enrollment.find({ student: student._id })
-            .populate("course", "title duration price") 
-            .lean();
-
-        const enrollmentData = await Promise.all(
-            enrollments.map(async (enr) => {
-                if (!enr.course) {
-                    return {
-                        enrollmentNo: enr.enrollmentNo || "N/A",
-                        course: { title: "Course no longer available", duration: "N/A" },
-                        joined: enr.enrolledAt,
-                        status: enr.status,
-                        payment: { totalFee: 0, paidAmount: 0, remainingBalance: 0, history: [] },
-                        certificate: { issued: false }
-                    };
-                }
-
-                const payments = await Payment.find({ enrollment: enr._id })
-                    .select("paymentFor paidAmount method transactionId paymentDate")
-                    .lean();
-
-                const totalFee = enr.course.price || 0;
-                const paidAmount = payments.reduce((sum, p) => sum + (p.paidAmount || 0), 0);
-                const remainingBalance = Math.max(0, totalFee - paidAmount);
-
-                const durationStr = enr.course.duration 
-                    ? `${enr.course.duration.value || 0} ${enr.course.duration.unit || 'Months'}` 
-                    : "N/A";
-
-                return {
-                    enrollmentNo: enr.enrollmentNo,
-                    course: {
-                        title: enr.course.title,
-                        duration: durationStr,
-                    },
-                    joined: enr.enrolledAt,
-                    status: enr.status,
-                    payment: {
-                        totalFee,
-                        paidAmount,
-                        remainingBalance,
-                        history: payments.map((p) => ({
-                            date: p.paymentDate,
-                            amount: p.paidAmount,
-                            method: p.method,
-                            txnId: p.transactionId,
-                        })),
-                    },
-                    certificate: enr.certificate?.issued
-                        ? {
-                            issued: true,
-                            certificateId: enr.certificate.certificateId,
-                            issuedAt: enr.certificate.issuedAt,
-                            downloadUrl: `/api/v1/certificate/download/${enr.certificate.certificateId}`,
-                        }
-                        : { issued: false },
-                };
-            })
-        );
-        return res.status(200).json({
-            success: true,
-            data: {
-                profile: {
-                    name: user.name,
-                    email: user.email,
-                    profilePhoto: user.profilePhoto,
-                },
-                student: {
-                    dob: student.dob,
-                    mobile: student.mobileNum || student.mobile,
-                    documents: student.documents || [],
-                },
-                enrollments: enrollmentData,
-            },
-        });
-
-    } catch (err) {
-        console.error("CRITICAL ERROR IN GETUSERPROFILE:", err);
-        return res.status(500).json({ 
-            success: false, 
-            message: "Internal Server Error",
-            error: process.env.NODE_ENV === 'development' ? err.message : undefined 
-        });
+  try {
+    const { userId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid User ID format" });
     }
+
+    const user = await User.findById(userId).select("name email profilePhoto");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User account not found" });
+    }
+
+    const student = await Student.findOne({ user: userId }).lean();
+
+    const enrollments = student
+      ? await Enrollment.find({ student: student._id })
+        .populate("course", "title duration price")
+        .lean()
+      : [];
+
+    const enrollmentData = await Promise.all(
+      enrollments.map(async (enr) => {
+        if (!enr.course) {
+          return {
+            enrollmentNo: enr.enrollmentNo || "N/A",
+            course: { title: "Course no longer available", duration: "N/A" },
+            joined: enr.enrolledAt,
+            status: enr.status,
+            payment: { totalFee: 0, paidAmount: 0, remainingBalance: 0, history: [] },
+            certificate: { issued: false }
+          };
+        }
+
+        const payments = await Payment.find({ enrollment: enr._id })
+          .select("paymentFor paidAmount method transactionId paymentDate")
+          .lean();
+
+        const totalFee = enr.course.price || 0;
+        const paidAmount = payments.reduce((sum, p) => sum + (p.paidAmount || 0), 0);
+        const remainingBalance = Math.max(0, totalFee - paidAmount);
+
+        const durationStr = enr.course.duration
+          ? `${enr.course.duration.value || 0} ${enr.course.duration.unit || 'Months'}`
+          : "N/A";
+
+        return {
+          enrollmentNo: enr.enrollmentNo,
+          course: {
+            title: enr.course.title,
+            duration: durationStr,
+          },
+          joined: enr.enrolledAt,
+          status: enr.status,
+          payment: {
+            totalFee,
+            paidAmount,
+            remainingBalance,
+            history: payments.map((p) => ({
+              date: p.paymentDate,
+              amount: p.paidAmount,
+              method: p.method,
+              txnId: p.transactionId,
+            })),
+          },
+          certificate: enr.certificate?.issued
+            ? {
+              issued: true,
+              certificateId: enr.certificate.certificateId,
+              issuedAt: enr.certificate.issuedAt,
+              downloadUrl: `/api/v1/certificate/download/${enr.certificate.certificateId}`,
+            }
+            : { issued: false },
+        };
+      })
+    );
+    return res.status(200).json({
+      success: true,
+      data: {
+        profile: {
+          name: user.name,
+          email: user.email,
+          profilePhoto: user.profilePhoto,
+        },
+        student: student
+          ? {
+            dob: student.dob,
+            mobile: student.mobileNum || student.mobile,
+            documents: student.documents || [],
+          }
+          : null,
+        enrollments: enrollmentData,
+      },
+    });
+
+  } catch (err) {
+    console.error("CRITICAL ERROR IN GETUSERPROFILE:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
 };
 
 const updateStudentAndEnrollment = asyncHandler(async (req, res) => {

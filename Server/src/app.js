@@ -13,6 +13,11 @@ app.use(cors({
   credentials: true
 }));
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); 
+app.use(express.static("public"));
+app.use(cookieParser());
+
 
 import userRouter from "./routes/user.router.js"
 import coursesRouter from "./routes/course.router.js"

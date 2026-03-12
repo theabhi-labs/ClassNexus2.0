@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Link as LinkIcon
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { enrollStudent, updateStudent, adminDashboardStudents, getStudentDetails, deleteStudent } from "../../api/student.api.js";
 import { getCourses } from "../../api/courses.api";
 import { certificateIssue, getCertificate } from "../../api/certificate.api";
@@ -72,10 +73,9 @@ export default function Students() {
 
       setCertificate(res.data.certificate);
 
-      alert("Certificate Issued Successfully!");
+      toast.success("Certificate Issued Successfully!");
     } catch (error) {
-      console.error(error);
-      alert("Certificate Issue Failed");
+      toast.error("Certificate Issue Failed");
     } finally {
       setIssuing(false);
     }
@@ -110,28 +110,29 @@ export default function Students() {
   };
 
   const handleSave = async () => {
-    if (!formData?.userId) return alert("No student selected");
-    if (!formData.course) return alert("Please select a course");
-    if (!formData.mobile || formData.mobile.length !== 10) return alert("Mobile must be 10 digits");
-    if (!formData.dob) return alert("Date of Birth is required");
+    if (!formData?.userId) return toast.error("No student selected");
+    if (!formData.course) return toast.error("Please select a course");
+    if (!formData.mobile || formData.mobile.length !== 10)
+      return toast.error("Mobile must be 10 digits");
+    if (!formData.dob) return toast.error("Date of Birth is required");
 
     setIsSubmitting(true);
 
     const payload = {
-  userId: formData.userId, // ✅ add this
-  mobileNum: formData.mobile,
-  dob: formData.dob,
-  courseId: formData.course,
-  status: enrollmentStatus
-};
+      userId: formData.userId, // ✅ add this
+      mobileNum: formData.mobile,
+      dob: formData.dob,
+      courseId: formData.course,
+      status: enrollmentStatus
+    };
 
     try {
       if (formData.studentId) {
         await updateStudent(formData.studentId, payload);
-        alert("Student updated successfully!");
+        toast.success("Student updated successfully!");
       } else {
         await enrollStudent(payload);
-        alert("Student enrolled successfully!");
+        toast.success("Student enrolled successfully!");
       }
 
       setStudents((prev) =>

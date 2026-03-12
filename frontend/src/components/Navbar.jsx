@@ -39,11 +39,11 @@ const Navbar = () => {
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
-      if (!token) return; 
+      if (!token) return;
 
       try {
         const res = await getCurrentUser();
-        setUser(res.data?.data?.user || res.data?.user); 
+        setUser(res.data?.data?.user || res.data?.user);
       } catch (err) {
         console.error("Auth Check Failed:", err);
         setUser(null);
@@ -64,34 +64,73 @@ const Navbar = () => {
     setError("");
     try {
       const res = await loginUser(loginData);
-      
-      // Token aur User set karein
+
       const userData = res.data?.data?.user || res.data?.user;
       const token = res.data?.data?.accessToken || res.data?.accessToken;
 
       if (token) localStorage.setItem("token", token);
       setUser(userData);
-      
+
       setIsLoginOpen(false);
     } catch (err) {
       setError(err.response?.data?.message || "Invalid Credentials");
-    } finally { 
-      setLoading(false); 
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const res = await registerUser(signupData);
-      setUser(res.data.data.user);
-      localStorage.setItem("token", res.data.data.accessToken);
-      setIsSignupOpen(false);
-    } catch (err) {
-      setError(err.response?.data?.message || "Signup Failed");
-    } finally { setLoading(false); }
+const handleSignupSubmit = async (e) => {
+  e.preventDefault();
+
+  setLoading(true);
+  setError("");
+
+  try {
+    const res = await registerUser(signupData);
+    const user = res?.data?.data?.user || res?.data?.user;
+    const token = res?.data?.data?.accessToken || res?.data?.accessToken;
+
+    if (token) {
+      localStorage.setItem("token", token);
+    }
+
+    setUser(user);
+    setIsSignupOpen(false);
+
+  } catch (err) {
+    let message = "Signup Failed";
+
+    if (err.response?.status === 409) {
+      message = "Email already registered. Please login.";
+    }
+    else if (typeof err.response?.data === "object") {
+      message =
+        err.response.data.message ||
+        err.response.data.error ||
+        message;
+    }
+    else if (typeof err.response?.data === "string") {
+
+      const match = err.response.data.match(/Error:\s*(.*?)</);
+
+      if (match && match[1]) {
+        message = match[1];
+      }
+    }
+    setError(message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleProfileClick = () => {
+    if (!user) return;
+
+    if (user?.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate(`/profile/${user?._id}`);
+    }
   };
 
   const handleLogout = async () => {
@@ -113,52 +152,52 @@ const Navbar = () => {
               onClick={() => navigate("/")}
             >
               {/* Larger Logo Container */}
-          <div className="relative flex items-center justify-center w-20 h-20 group cursor-pointer">
-  {/* Dynamic Purple Glow (Chamak) */}
-  <div className="absolute inset-0 bg-purple-600/30 blur-[25px] rounded-full animate-pulse group-hover:bg-purple-500/50 transition-all duration-700" />
-  
-  {/* Glassmorphism Background for Cap */}
-  <div className="absolute inset-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl group-hover:scale-110 transition-transform duration-500" />
+              <div className="relative flex items-center justify-center w-20 h-20 group cursor-pointer">
+                {/* Dynamic Purple Glow (Chamak) */}
+                <div className="absolute inset-0 bg-purple-600/30 blur-[25px] rounded-full animate-pulse group-hover:bg-purple-500/50 transition-all duration-700" />
 
-  <svg 
-    viewBox="0 0 100 100" 
-    className="relative w-16 h-16 drop-shadow-2xl transform transition-all duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* Large Graduation Cap Design */}
-    <g>
-      {/* Top Diamond - Bada aur Bold */}
-      <path 
-        d="M10 40L50 20L90 40L50 60L10 40Z" 
-        className="fill-slate-900 group-hover:fill-indigo-950 transition-colors duration-300"
-      />
-      
-      {/* Cap Base (Niche ka hissa) */}
-      <path 
-        d="M25 48V62C25 62 35 70 50 70C65 70 75 62 75 62V48" 
-        className="fill-slate-800"
-      />
+                {/* Glassmorphism Background for Cap */}
+                <div className="absolute inset-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl group-hover:scale-110 transition-transform duration-500" />
 
-      {/* Tassel (Sunehri Latkan) */}
-      <path 
-        d="M90 40V65" 
-        className="stroke-amber-400" 
-        strokeWidth="3" 
-        strokeLinecap="round" 
-      />
-      <circle cx="90" cy="68" r="4" className="fill-amber-500 animate-bounce group-hover:animate-none" />
-      
-      {/* Subtle Shine on Cap */}
-      <path 
-        d="M25 38L50 25L80 38" 
-        stroke="white" 
-        strokeWidth="0.5" 
-        fill="none" 
-        className="opacity-30"
-      />
-    </g>
-  </svg>
-</div>
+                <svg
+                  viewBox="0 0 100 100"
+                  className="relative w-16 h-16 drop-shadow-2xl transform transition-all duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  {/* Large Graduation Cap Design */}
+                  <g>
+                    {/* Top Diamond - Bada aur Bold */}
+                    <path
+                      d="M10 40L50 20L90 40L50 60L10 40Z"
+                      className="fill-slate-900 group-hover:fill-indigo-950 transition-colors duration-300"
+                    />
+
+                    {/* Cap Base (Niche ka hissa) */}
+                    <path
+                      d="M25 48V62C25 62 35 70 50 70C65 70 75 62 75 62V48"
+                      className="fill-slate-800"
+                    />
+
+                    {/* Tassel (Sunehri Latkan) */}
+                    <path
+                      d="M90 40V65"
+                      className="stroke-amber-400"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="90" cy="68" r="4" className="fill-amber-500 animate-bounce group-hover:animate-none" />
+
+                    {/* Subtle Shine on Cap */}
+                    <path
+                      d="M25 38L50 25L80 38"
+                      stroke="white"
+                      strokeWidth="0.5"
+                      fill="none"
+                      className="opacity-30"
+                    />
+                  </g>
+                </svg>
+              </div>
 
               {/* Typography Side */}
               <div className="flex flex-col justify-center">
@@ -183,7 +222,7 @@ const Navbar = () => {
                 {isLoggedIn ? (
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => navigate(`/profile/${user?._id}`)}
+                      onClick={handleProfileClick}
                       className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-gray-100 transition"
                     >
                       <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">
@@ -225,7 +264,7 @@ const Navbar = () => {
                 {isLoggedIn ? (
                   <>
                     <button
-                      onClick={() => navigate(`/profile/${user?._id}`)}
+                      onClick={handleProfileClick}
                       className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-gray-100 transition"
                     >
                       <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">
@@ -368,9 +407,12 @@ const Navbar = () => {
 
             {/* Error Message */}
             {error && (
-              <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl flex gap-2 items-center text-sm font-medium animate-in slide-in-from-top duration-200">
-                <AlertCircle size={18} />
-                {error}
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex gap-3 items-start text-sm animate-in slide-in-from-top duration-200">
+                <AlertCircle size={20} className="mt-0.5" />
+                <div>
+                  <p className="font-semibold">Signup Error</p>
+                  <p className="text-red-600">{error}</p>
+                </div>
               </div>
             )}
 
