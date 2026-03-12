@@ -100,7 +100,7 @@ const Footer = () => {
 
           {/* Developer Portfolio Button */}
           <a
-            href="https://abhishekportfolio-mzye442bs-abhishek-yadavs-projects-c0d518dd.vercel.app"
+            href="https://abhishekportfolio-eta.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-all duration-300 active:scale-95"
