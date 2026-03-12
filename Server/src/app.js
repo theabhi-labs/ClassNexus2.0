@@ -2,29 +2,16 @@ import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 
+const app = express()
 const allowedOrigins = [
-  "https://class-nexus2-0.vercel.app",
-  "http://localhost:5173"  // Add your local dev URL
+  'https://class-nexus2-0.vercel.app', 
+  'http://localhost:5173' 
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true // if sending cookies/JWT in headers
+  origin: allowedOrigins,
+  credentials: true
 }));
-
-
-
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
-app.use(express.static("public"));
-app.use(cookieParser());
 
 
 import userRouter from "./routes/user.router.js"
