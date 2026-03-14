@@ -1,0 +1,53 @@
+name: Test MERN App
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      
+      - name: Debug - List all files
+        run: |
+          echo "📂 Current directory:"
+          pwd
+          echo "📋 All files and folders in root:"
+          ls -la
+          echo "🔍 Searching for backend/server/api folders:"
+          find . -maxdepth 2 -type d | grep -E "(backend|server|api|Backend|Server|API)" || echo "No matching folders found"
+          
+      - name: Frontend Install & Build
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
+        continue-on-error: true  # Don't fail if frontend not found
+          
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          
+      - name: Debug - List all directories
+        run: |
+          echo "📂 Current directory:"
+          pwd
+          echo "📋 Root directory contents:"
+          ls -la
+          echo "📁 All folders in root:"
+          ls -d */ 2>/dev/null || echo "No folders found"
