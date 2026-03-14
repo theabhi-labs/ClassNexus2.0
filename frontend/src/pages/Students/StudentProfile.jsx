@@ -3,10 +3,12 @@ import { useParams } from "react-router-dom";
 import {
   IndianRupee, Download, BookOpen, CreditCard,
   Award, LogOut, History, CheckCircle2,
-  Calendar, Phone, Mail, ShieldCheck, ArrowUpRight, Wallet, ExternalLink
+  Calendar, Phone, Mail, ShieldCheck, ArrowUpRight, Wallet, User, ChevronRight
 } from "lucide-react";
 import { getUserProfile } from "../../api/student.api.js";
 import { logoutUser } from "../../api/auth.api.js";
+import CertificateRow from "./CertificateRow.jsx";
+import PaymentLogsTable from "./PaymentLogsTable.jsx";
 
 const StudentProfile = () => {
   const { id } = useParams();
@@ -17,19 +19,23 @@ const StudentProfile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      let effectiveId = (id && id !== "undefined" && id.length > 5) ? id : null;
+      let effectiveId = (id && id !== "undefined") ? id : null;
       if (!effectiveId) {
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
         effectiveId = storedUser._id || storedUser.id;
       }
 
       if (!effectiveId) {
-        setLoading(false);
-        setError("Session expired. Please login again.");
-        return;
+        const timeout = setTimeout(() => {
+          setLoading(false);
+          setError("Session expired. Please login again.");
+        }, 1500);
+        return () => clearTimeout(timeout);
       }
 
       try {
+        setLoading(true);
+        setError(null);
         const res = await getUserProfile(effectiveId);
         if (res.data?.success) {
           setData(res.data.data);
@@ -37,8 +43,7 @@ const StudentProfile = () => {
           setError(res.data?.message || "Student info not found.");
         }
       } catch (err) {
-        const msg = err.response?.data?.message || "Profile not found in database.";
-        setError(msg);
+        setError(err.response?.data?.message || "Profile not found.");
       } finally {
         setLoading(false);
       }
@@ -77,75 +82,134 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
   const remaining = totalFee - paidAmount;
 
   return (
-    <div className="min-h-screen bg-[#FDFDFF] text-slate-900 font-sans selection:bg-indigo-100 pb-20">
-      {/* Navbar Section */}
-      <nav className="sticky top-4 z-50 mx-auto max-w-5xl px-4">
-        <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl shadow-indigo-100/50 rounded-[2.5rem] px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-2 rounded-2xl shadow-lg shadow-indigo-200">
-              <ShieldCheck className="text-white w-5 h-5" />
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans selection:bg-indigo-100 pb-20">
+      <nav className="sticky top-0 z-50 w-full px-3 py-4">
+        <div className="max-w-7xl mx-auto bg-white/80 backdrop-blur-xl border border-white/50 shadow-lg shadow-slate-200/50 rounded-[1.8rem] px-4 sm:px-6 py-3 flex justify-between items-center">
+
+          <div
+            className="`flex-shrink-0` cursor-pointer group flex items-center gap-2 sm:gap-4"
+            onClick={() => navigate("/")}
+          >
+            <div className="relative flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 group">
+              <div className="absolute inset-0 bg-purple-600/20 blur-[20px] rounded-full animate-pulse group-hover:bg-purple-500/40 transition-all duration-700" />
+              <div className="absolute inset-1 sm:inset-2 bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20 shadow-xl group-hover:scale-110 transition-transform duration-500" />
+
+              <svg
+                viewBox="0 0 100 100"
+                className="relative w-10 h-10 sm:w-16 sm:h-16 drop-shadow-2xl transform transition-all duration-500 group-hover:rotate-[-5deg]"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g>
+                  <path d="M10 40L50 20L90 40L50 60L10 40Z" className="fill-slate-900 group-hover:fill-indigo-950 transition-colors" />
+                  <path d="M25 48V62C25 62 35 70 50 70C65 70 75 62 75 62V48" className="fill-slate-800" />
+                  <path d="M90 40V65" className="stroke-amber-400" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="90" cy="68" r="4" className="fill-amber-500 animate-bounce group-hover:animate-none" />
+                </g>
+              </svg>
             </div>
-            <span className="text-lg font-black tracking-tighter italic uppercase">Techvision</span>
+            <div className="flex flex-col justify-center overflow-hidden">
+              <h1 className="text-[14px] xs:text-[16px] md:text-2xl font-black tracking-tighter leading-[1.1] text-slate-800 uppercase">
+                JAS COMPUTER <span className="text-indigo-600 block sm:inline">INSTITUTE</span>
+              </h1>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="h-[1.5px] w-2 sm:w-4 bg-indigo-500 rounded-full"></span>
+                <p className="text-[7px] sm:text-[10px] font-extrabold uppercase tracking-[0.15em] sm:tracking-[0.3em] text-slate-400 whitespace-nowrap">
+                  & Training Center
+                </p>
+              </div>
+            </div>
           </div>
-          <button onClick={onLogout} disabled={isLoggingOut} className="group flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-red-500 transition-all">
-            <span className="hidden sm:block">{isLoggingOut ? "SIGNING OUT..." : "SIGN OUT"}</span>
-            <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onLogout}
+              disabled={isLoggingOut}
+              className="group flex items-center gap-2 sm:gap-3 pl-3 border-l border-slate-100 ml-1"
+            >
+
+              <span className="hidden sm:block text-[10px] font-black text-slate-400 group-hover:text-rose-500 transition-colors uppercase tracking-widest">
+                {isLoggingOut ? "Processing" : "Sign Out"}
+              </span>
+
+              <div className="bg-slate-50 group-hover:bg-rose-50 p-2 sm:p-2.5 rounded-xl text-slate-400 group-hover:text-rose-500 transition-all duration-300 border border-transparent group-hover:border-rose-100">
+                <LogOut size={16} className="`sm:w-[18px] sm:h-[18px]` group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </button>
+          </div>
+
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 mt-12">
-        {/* Header Section */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-end mb-12">
-          <div className="lg:col-span-2">
-            <h1 className="text-5xl font-black text-slate-900 tracking-tight mb-4">
-              Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">{firstName}</span>
-            </h1>
-            <p className="text-slate-500 font-medium text-lg">Student ID: <span className="font-bold text-slate-800">{studentDisplayId}</span></p>
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
-            <StatCard icon={<CheckCircle2 />} label="Courses" value={enrollments.length} color="emerald" />
-            <StatCard icon={<Award />} label="Certificates" value={enrollments.filter(e => e.certificate?.issued).length} color="indigo" />
-          </div>
-        </section>
+      <main className="max-w-7xl mx-auto px-6 mt-6">
+       <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 px-2">
+  <div>
+    <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+      Hello, 
+      <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+        {firstName}
+      </span>
+    </h1>
+
+    <p className="text-slate-500 mt-2 font-bold text-sm uppercase tracking-tighter">
+      Student Dashboard <span className="mx-2 text-slate-300">|</span> ID: {studentDisplayId}
+    </p>
+  </div>
+
+  <div className="flex gap-3">
+    <QuickStat icon={<BookOpen size={18} />} label="Enrolled" value={enrollments.length} color="indigo" />
+    <QuickStat icon={<Award size={18} />} label="Certificates" value={enrollments.filter(e => e.certificate?.issued).length} color="amber" />
+  </div>
+</section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Sidebar */}
-          <div className="lg:col-span-4 space-y-8">
-            <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-sm">
-              <img
-                src={profile?.profilePhoto || `https://ui-avatars.com/api/?name=${profile?.name}&background=6366f1&color=fff`}
-                className="w-20 h-20 rounded-3xl object-cover mb-6 shadow-xl border-4 border-white"
-                alt="profile"
-              />
+
+          <div className="lg:col-span-4 space-y-6">
+
+            <div className="bg-white border border-slate-200/60 shadow-xl shadow-slate-200/40 p-8 rounded-[2.5rem]">
+              <div className="flex flex-col items-center text-center mb-8">
+                <div className="relative mb-4">
+                  <img
+                    src={profile?.profilePhoto || `https://ui-avatars.com/api/?name=${profile?.name}&background=6366f1&color=fff`}
+                    className="w-24 h-24 `rounded-[2rem]` object-cover shadow-2xl border-4 border-white"
+                    alt="profile"
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-5 h-5 rounded-full border-4 border-white"></div>
+                </div>
+                <h2 className="font-black text-slate-900 text-xl">{profile?.name}</h2>
+                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-2 bg-indigo-50 px-3 py-1 rounded-full">Scholar</p>
+              </div>
+
               <div className="space-y-4">
                 <ContactLine icon={<Mail />} value={profile?.email} />
                 <ContactLine icon={<Phone />} value={student?.mobile} />
-                <ContactLine icon={<Calendar />} value={student?.dob ? new Date(student.dob).toLocaleDateString() : "N/A"} />
+                <ContactLine icon={<Calendar />} value={student?.dob ? new Date(student.dob).toLocaleDateString('en-GB') : "N/A"} />
               </div>
             </div>
 
-            {/* Billing Card */}
-            <div className="bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-500/20 transition-all"></div>
               <div className="relative z-10">
-                <p className="text-indigo-300 text-[10px] font-black uppercase tracking-[0.3em] mb-8">Billing Overview</p>
-                <div className="space-y-6">
-                  <p className="text-4xl font-black italic">₹{totalFee.toLocaleString()}</p>
-                  <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
-                    <FinanceItem label="Paid" value={paidAmount} color="text-emerald-400" />
-                    <FinanceItem label="Balance" value={remaining} color="text-red-400" align="right" />
-                  </div>
+                <div className="flex justify-between items-center mb-10">
+                  <p className="text-indigo-300 text-[10px] font-black uppercase tracking-[0.3em]">Billing Overview</p>
+                  <Wallet size={20} className="text-indigo-400" />
+                </div>
+                <div className="mb-8">
+                  <p className="text-4xl font-black italic tracking-tighter">₹{totalFee.toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Total Course Value</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+                  <FinanceItem label="Paid" value={paidAmount} color="text-emerald-400" />
+                  <FinanceItem label="Due" value={remaining} color="text-rose-400" align="right" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Content Area */}
           <div className="lg:col-span-8 space-y-8">
-            {/* Active Learning Section */}
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-8">
-                <BookOpen size={18} className="text-indigo-600" /> Active Learning
+
+            <div className="bg-white border border-slate-200/60 shadow-sm rounded-[2.5rem] p-8">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.25em] flex items-center gap-3 mb-8">
+                <div className="w-8 h-[2px] bg-indigo-600"></div> My Learning Journey
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {enrollments.map((e, idx) => <CourseCard key={idx} enrollment={e} />)}
@@ -153,9 +217,9 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
             </div>
 
             {/* Certificates Section */}
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-6">
-                <Award size={18} className="text-violet-600" /> Earned Certificates
+            <div className="bg-white border border-slate-200/60 shadow-sm rounded-[2.5rem] p-8">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.25em] flex items-center gap-3 mb-6">
+                <div className="`w-8 h-[2px]` bg-amber-500"></div> Achievements
               </h3>
               <div className="space-y-4">
                 {enrollments.filter(e => e.certificate?.issued).length > 0 ? (
@@ -163,44 +227,13 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
                     <CertificateRow key={idx} cert={e.certificate} courseTitle={e.course?.title} />
                   ))
                 ) : (
-                  <p className="text-slate-400 text-sm italic">No certificates issued yet.</p>
+                  <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
+                    <p className="text-slate-400 text-sm font-bold italic">No certifications issued yet.</p>
+                  </div>
                 )}
               </div>
             </div>
-
-            {/* Payment Logs Section */}
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-6">
-                <History size={18} className="text-emerald-600" /> Transaction History
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-separate border-spacing-y-3">
-                  <thead>
-                    <tr className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
-                      <th className="pb-2 px-4">Date</th>
-                      <th className="pb-2 px-4">Method</th>
-                      <th className="pb-2 px-4 text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {enrollments.flatMap(e => e.payment?.history || []).map((log, i) => (
-                      <tr key={i} className="bg-slate-50 hover:bg-slate-100 transition-colors">
-                        <td className="py-4 px-4 rounded-l-2xl text-sm font-bold text-slate-600">
-                          {new Date(log.date).toLocaleDateString()}
-                        </td>
-                        <td className="py-4 px-4 text-xs font-black">
-                          <span className="bg-white px-3 py-1 rounded-full border border-slate-200">{log.method}</span>
-                        </td>
-                        <td className="py-4 px-4 rounded-r-2xl text-right font-black text-emerald-600">
-                          ₹{log.amount.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
+            <PaymentLogsTable enrollments={User?.enrollments} />
           </div>
         </div>
       </main>
@@ -208,68 +241,77 @@ const StudentProfileContent = ({ data, onLogout, isLoggingOut }) => {
   );
 };
 
-// --- NEW COMPONENTS ---
+// --- Reusable Sub-Components ---
 
-const CertificateRow = ({ cert, courseTitle }) => (
-  <div className="flex items-center justify-between p-5 bg-gradient-to-r from-violet-50 to-transparent border border-violet-100 rounded-3xl group hover:shadow-md transition-all">
-    <div className="flex items-center gap-4">
-      <div className="bg-white p-3 rounded-2xl shadow-sm text-violet-600">
-        <Award size={24} />
-      </div>
+const QuickStat = ({ icon, label, value, color }) => {
+  const themes = {
+    indigo: "text-indigo-600 bg-indigo-50",
+    amber: "text-amber-600 bg-amber-50"
+  };
+  return (
+    <div className="bg-white border border-slate-100 px-5 py-3 rounded-2xl flex items-center gap-4 shadow-xl shadow-slate-200/40">
+      <div className={`p-2.5 rounded-xl ${themes[color]}`}>{icon}</div>
       <div>
-        <h4 className="font-black text-slate-800 text-sm leading-tight">{courseTitle}</h4>
-        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">ID: {cert.certificateId}</p>
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight mb-0.5">{label}</p>
+        <p className="text-xl font-black text-slate-900 leading-none">{value}</p>
       </div>
     </div>
-    <a 
-      href={cert.downloadUrl} 
-      target="_blank" 
-      rel="noreferrer"
-      className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl text-xs font-black text-violet-600 border border-violet-100 hover:bg-violet-600 hover:text-white transition-all shadow-sm"
-    >
-      <Download size={14} /> DOWNLOAD
-    </a>
-  </div>
-);
+  );
+};
 
-// --- EXISTING HELPERS (Keep as is) ---
-const StatCard = ({ icon, label, value, color }) => (
-  <div className="bg-white border border-slate-100 p-4 rounded-3xl flex items-center gap-4 shadow-sm">
-    <div className={`p-3 bg-${color}-50 rounded-2xl text-${color}-600`}>{icon}</div>
-    <div><p className="text-[10px] font-bold text-slate-400 uppercase">{label}</p><p className="text-xl font-black">{value}</p></div>
-  </div>
-);
 const FinanceItem = ({ label, value, color, align = "left" }) => (
   <div className={align === "right" ? "text-right" : ""}>
-    <p className={`text-[9px] font-black uppercase tracking-widest ${color}`}>{label}</p>
-    <p className="text-xl font-bold text-white leading-none">₹{value.toLocaleString()}</p>
+    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{label}</p>
+    <p className={`text-xl font-black italic ${color}`}>₹{value.toLocaleString()}</p>
   </div>
 );
+
 const ContactLine = ({ icon, value }) => (
-  <div className="flex items-center gap-4 group">
-    <div className="text-indigo-500 bg-indigo-50 p-2 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all">{React.cloneElement(icon, { size: 16 })}</div>
-    <span className="text-sm font-bold text-slate-600 truncate">{value || "N/A"}</span>
-  </div>
-);
-const CourseCard = ({ enrollment }) => (
-  <div className="group bg-slate-50 hover:bg-white p-6 rounded-3xl border border-transparent hover:border-slate-100 transition-all shadow-sm">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`text-[10px] font-black px-3 py-1 rounded-full uppercase ${enrollment.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>{enrollment.status}</div>
-      <ArrowUpRight size={18} className="text-slate-300 group-hover:text-indigo-600" />
+  <div className="flex items-center gap-4 text-slate-500 group">
+    <div className="text-slate-300 group-hover:text-indigo-500 transition-colors">
+      {React.cloneElement(icon, { size: 16 })}
     </div>
-    <h4 className="font-bold text-slate-800 text-lg mb-1">{enrollment.course?.title}</h4>
-    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">ID: {enrollment.enrollmentNo}</p>
+    <span className="text-sm font-bold truncate transition-colors group-hover:text-slate-800">
+      {value || "Not Provided"}
+    </span>
   </div>
 );
-const LoadingSkeleton = () => (
-  <div className="h-screen w-full flex items-center justify-center bg-white"><div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div></div>
+
+const CourseCard = ({ enrollment }) => (
+  <div className="group p-6 rounded-[2rem] border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-2xl hover:shadow-indigo-100/40 transition-all duration-500 cursor-default">
+    <div className="flex justify-between items-start mb-6">
+      <div className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${enrollment.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'
+        }`}>
+        {enrollment.status}
+      </div>
+      <ArrowUpRight size={18} className="text-slate-200 group-hover:text-indigo-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+    </div>
+    <h4 className="font-black text-slate-800 text-lg leading-tight group-hover:text-indigo-600 transition-colors">{enrollment.course?.title}</h4>
+    <p className="text-[10px] font-black text-slate-400 mt-3 uppercase tracking-tighter">Reference No: {enrollment.enrollmentNo}</p>
+  </div>
 );
+
+const LoadingSkeleton = () => (
+  <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F8FAFC]">
+    <div className="w-12 h-12 border-[3px] border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p className="text-slate-400 font-black text-xs uppercase tracking-widest animate-pulse">Initializing Portal</p>
+  </div>
+);
+
 const ErrorState = ({ message }) => (
-  <div className="h-screen w-full flex items-center justify-center bg-slate-50 px-6">
-    <div className="bg-white p-12 rounded-[3rem] shadow-2xl text-center max-w-sm">
-      <h2 className="text-2xl font-black text-slate-900 mb-2">Notice</h2>
-      <p className="text-slate-500 text-sm mb-8 leading-relaxed">{message}</p>
-      <button onClick={() => window.location.href = '/'} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest">Go to Login</button>
+  <div className="h-screen w-full flex items-center justify-center bg-slate-50 p-6">
+    <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100 text-center max-w-sm">
+      <div className="bg-rose-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <ShieldCheck className="text-rose-500" size={32} />
+      </div>
+      <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Access Alert</h2>
+      <p className="text-slate-500 text-sm mb-8 leading-relaxed font-medium">{message}</p>
+      <button
+        onClick={() => window.location.href = '/'}
+        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-colors shadow-lg shadow-slate-200"
+      >
+        Return to Login
+      </button>
     </div>
   </div>
 );

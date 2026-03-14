@@ -58,26 +58,35 @@ const Navbar = () => {
     setIsOpen(false);
   };
 
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const res = await loginUser(loginData);
+const handleLoginSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+  try {
+    const res = await loginUser(loginData);
 
-      const userData = res.data?.data?.user || res.data?.user;
-      const token = res.data?.data?.accessToken || res.data?.accessToken;
+    const userData = res.data?.data?.user || res.data?.user;
+    const token = res.data?.data?.accessToken || res.data?.accessToken;
 
-      if (token) localStorage.setItem("token", token);
+    if (token) localStorage.setItem("token", token);
+    
+    if (userData) {
+      localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
-
-      setIsLoginOpen(false);
-    } catch (err) {
-      setError(err.response?.data?.message || "Invalid Credentials");
-    } finally {
-      setLoading(false);
     }
-  };
+    setIsLoginOpen(false);
+    if (userData?.role !== "admin") {
+      navigate(`/profile/${userData._id}`);
+    } else {
+      navigate("/admin");
+    }
+
+  } catch (err) {
+    setError(err.response?.data?.message || "Invalid Credentials");
+  } finally {
+    setLoading(false);
+  }
+};
 
 const handleSignupSubmit = async (e) => {
   e.preventDefault();
@@ -143,163 +152,144 @@ const handleSignupSubmit = async (e) => {
 
   return (
     <>
-      <nav className="bg-white/80 backdrop-blur-xl shadow-sm sticky top-0 z-[60] border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 md:h-20">
-            {/* Logo */}
-            <div
-              className="flex-shrink-0 cursor-pointer group flex items-center gap-4"
-              onClick={() => navigate("/")}
-            >
-              {/* Larger Logo Container */}
-              <div className="relative flex items-center justify-center w-20 h-20 group cursor-pointer">
-                {/* Dynamic Purple Glow (Chamak) */}
-                <div className="absolute inset-0 bg-purple-600/30 blur-[25px] rounded-full animate-pulse group-hover:bg-purple-500/50 transition-all duration-700" />
+<nav className="bg-white/80 backdrop-blur-xl shadow-sm sticky top-0 z-[60] border-b border-gray-100">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex justify-between items-center h-16 md:h-24"> {/* Height slightly increased for better label breathing */}
+      
+      {/* --- LOGO & INSTITUTE NAME --- */}
+      <div
+        className="flex-shrink-0 cursor-pointer group flex items-center gap-2 sm:gap-4"
+        onClick={() => navigate("/")}
+      >
+        {/* Logo Container */}
+        <div className="relative flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 group">
+          {/* Dynamic Purple Glow */}
+          <div className="absolute inset-0 bg-purple-600/20 blur-[20px] rounded-full animate-pulse group-hover:bg-purple-500/40 transition-all duration-700" />
 
-                {/* Glassmorphism Background for Cap */}
-                <div className="absolute inset-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl group-hover:scale-110 transition-transform duration-500" />
+          {/* Glassmorphism Background */}
+          <div className="absolute inset-1 sm:inset-2 bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20 shadow-xl group-hover:scale-110 transition-transform duration-500" />
 
-                <svg
-                  viewBox="0 0 100 100"
-                  className="relative w-16 h-16 drop-shadow-2xl transform transition-all duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  {/* Large Graduation Cap Design */}
-                  <g>
-                    {/* Top Diamond - Bada aur Bold */}
-                    <path
-                      d="M10 40L50 20L90 40L50 60L10 40Z"
-                      className="fill-slate-900 group-hover:fill-indigo-950 transition-colors duration-300"
-                    />
-
-                    {/* Cap Base (Niche ka hissa) */}
-                    <path
-                      d="M25 48V62C25 62 35 70 50 70C65 70 75 62 75 62V48"
-                      className="fill-slate-800"
-                    />
-
-                    {/* Tassel (Sunehri Latkan) */}
-                    <path
-                      d="M90 40V65"
-                      className="stroke-amber-400"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                    <circle cx="90" cy="68" r="4" className="fill-amber-500 animate-bounce group-hover:animate-none" />
-
-                    {/* Subtle Shine on Cap */}
-                    <path
-                      d="M25 38L50 25L80 38"
-                      stroke="white"
-                      strokeWidth="0.5"
-                      fill="none"
-                      className="opacity-30"
-                    />
-                  </g>
-                </svg>
-              </div>
-
-              {/* Typography Side */}
-              <div className="flex flex-col justify-center">
-                <h1 className="text-2xl md:text-3xl font-black tracking-tighter leading-none text-slate-800">
-                  JAS <span className="text-indigo-600">Computer</span>
-                </h1>
-                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400 mt-1">
-                  Learning Hub
-                </p>
-              </div>
-            </div>
-
-            {/* Desktop Menu - Hidden on Mobile */}
-            <div className="hidden md:flex items-center gap-8">
-              <div className="flex items-center gap-6">
-                {navItems.map((item) => (
-                  <button key={item.name} onClick={() => handleNavClick(item.scroll)} className="text-gray-600 hover:text-indigo-600 font-bold transition-colors">{item.name}</button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-3 border-l pl-6 border-gray-200">
-                {isLoggedIn ? (
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleProfileClick}
-                      className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-gray-100 transition"
-                    >
-                      <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">
-                        {user?.name?.charAt(0).toUpperCase()}
-                      </div>
-
-                      <span className="font-bold text-gray-700">
-                        {user?.name?.split(" ")[0]}
-                      </span>
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <button onClick={() => { setIsLoginOpen(true); setError("") }} className="font-bold text-gray-700 hover:text-indigo-600">Log in</button>
-                    <button onClick={() => { setIsSignupOpen(true); setError("") }} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all">Sign Up</button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile Hamburger Icon - Clean View */}
-            <div className="md:hidden">
-              <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
-                {isOpen ? <X size={30} /> : <Menu size={30} />}
-              </button>
-            </div>
-          </div>
+          <svg
+            viewBox="0 0 100 100"
+            className="relative w-10 h-10 sm:w-16 sm:h-16 drop-shadow-2xl transform transition-all duration-500 group-hover:rotate-[-5deg]"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <g>
+              <path d="M10 40L50 20L90 40L50 60L10 40Z" className="fill-slate-900 group-hover:fill-indigo-950 transition-colors" />
+              <path d="M25 48V62C25 62 35 70 50 70C65 70 75 62 75 62V48" className="fill-slate-800" />
+              <path d="M90 40V65" className="stroke-amber-400" strokeWidth="3" strokeLinecap="round" />
+              <circle cx="90" cy="68" r="4" className="fill-amber-500 animate-bounce group-hover:animate-none" />
+            </g>
+          </svg>
         </div>
 
-        {/* MOBILE MENU DROPDOWN - Logic for LoggedIn and Guest */}
-        {isOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 absolute w-full shadow-2xl z-[70] animate-in slide-in-from-top duration-300">
-            <div className="px-6 py-8 space-y-6">
-              {navItems.map((item) => (
-                <button key={item.name} onClick={() => handleNavClick(item.scroll)} className="block w-full text-left text-xl font-bold text-gray-700 active:text-indigo-600">{item.name}</button>
-              ))}
-
-              <div className="pt-6 border-t border-gray-100 flex flex-col gap-4">
-                {isLoggedIn ? (
-                  <>
-                    <button
-                      onClick={handleProfileClick}
-                      className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-gray-100 transition"
-                    >
-                      <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">
-                        {user?.name?.charAt(0).toUpperCase()}
-                      </div>
-
-                      <span className="font-bold text-gray-700">
-                        {user?.name.split(" ")[0]}
-                      </span>
-                    </button>
-                    <button onClick={handleLogout} className="flex items-center gap-4 font-bold text-red-600 text-lg">
-                      <LogOut size={24} /> Log Out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => { setIsLoginOpen(true); setIsOpen(false); setError("") }}
-                      className="w-full py-4 border-2 border-indigo-600 text-indigo-600 font-bold rounded-2xl text-lg hover:bg-indigo-50"
-                    >
-                      Log in
-                    </button>
-                    <button
-                      onClick={() => { setIsSignupOpen(true); setIsOpen(false); setError("") }}
-                      className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl text-lg shadow-lg active:scale-95 transition-all"
-                    >
-                      Get Started Free
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+        {/* Typography Section - Managing the long name */}
+        <div className="flex flex-col justify-center overflow-hidden">
+          <h1 className="text-[14px] xs:text-[16px] md:text-2xl font-black tracking-tighter leading-[1.1] text-slate-800 uppercase">
+            JAS COMPUTER <span className="text-indigo-600 block sm:inline">INSTITUTE</span>
+          </h1>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="h-[1.5px] w-2 sm:w-4 bg-indigo-500 rounded-full"></span>
+            <p className="text-[7px] sm:text-[10px] font-extrabold uppercase tracking-[0.15em] sm:tracking-[0.3em] text-slate-400 whitespace-nowrap">
+              & Training Center
+            </p>
           </div>
-        )}
-      </nav>
+        </div>
+      </div>
+
+      {/* --- DESKTOP MENU --- */}
+      <div className="hidden md:flex items-center gap-8">
+        <div className="flex items-center gap-6">
+          {navItems.map((item) => (
+            <button key={item.name} onClick={() => handleNavClick(item.scroll)} className="text-gray-600 hover:text-indigo-600 font-bold transition-colors text-sm uppercase tracking-wider">{item.name}</button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3 border-l pl-6 border-gray-200">
+  {isLoggedIn ? (
+    <button
+      onClick={handleProfileClick}
+      className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-100 transition"
+    >
+
+      {user?.profilePhoto ? (
+        <img
+          src={user.profilePhoto}
+          alt="profile"
+          className="w-8 h-8 rounded-full object-cover border border-gray-200"
+        />
+      ) : (
+        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black shadow-lg shadow-indigo-100">
+          {user?.name?.charAt(0).toUpperCase()}
+        </div>
+      )}
+
+      <span className="font-bold text-gray-700 text-sm">
+        {user?.name?.split(" ")[0]}
+      </span>
+
+    </button>
+  ) : (
+    <div className="flex items-center gap-4">
+      <button
+        onClick={() => { setIsLoginOpen(true); setError("") }}
+        className="font-bold text-gray-600 hover:text-indigo-600 text-sm"
+      >
+        LOGIN
+      </button>
+
+      <button
+        onClick={() => { setIsSignupOpen(true); setError("") }}
+        className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-black text-xs tracking-widest hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+      >
+        SIGN UP
+      </button>
+    </div>
+  )}
+</div>
+      </div>
+
+      {/* --- MOBILE HAMBURGER --- */}
+      <div className="md:hidden flex items-center">
+        <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-gray-700 hover:bg-indigo-50 rounded-xl transition-all">
+          {isOpen ? <X size={26} /> : <Menu size={26} />}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {/* --- MOBILE MENU --- */}
+  {isOpen && (
+    <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 absolute w-full shadow-2xl z-[70] animate-in slide-in-from-top duration-300">
+      <div className="px-6 py-8 space-y-5">
+        {navItems.map((item) => (
+          <button key={item.name} onClick={() => handleNavClick(item.scroll)} className="block w-full text-left text-lg font-black text-slate-700 uppercase tracking-tight">{item.name}</button>
+        ))}
+
+        <div className="pt-6 border-t border-slate-100 space-y-4">
+          {isLoggedIn ? (
+            <>
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
+                <span className="font-black text-slate-800">{user?.name}</span>
+              </div>
+              <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 font-black text-rose-500 bg-rose-50 rounded-2xl">
+                <LogOut size={20} /> LOG OUT
+              </button>
+            </>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => { setIsLoginOpen(true); setIsOpen(false); }} className="py-4 border-2 border-slate-100 font-black rounded-2xl text-slate-600">LOGIN</button>
+              <button onClick={() => { setIsSignupOpen(true); setIsOpen(false); }} className="py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-100">JOIN NOW</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )}
+</nav>
 
       {/* LOGIN MODAL */}
       {isLoginOpen && (
