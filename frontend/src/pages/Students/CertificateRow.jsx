@@ -5,7 +5,7 @@ const CertificateRow = ({ cert, courseTitle }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   
   const backendBaseUrl = import.meta.env.VITE_API_BASE;
-  const downloadUrl = `${backendBaseUrl}/api/v1/certificate/certificate/${cert.certificateId}`;
+  const downloadUrl = `${backendBaseUrl}/certificate/certificate/${cert.certificateId}`;
 
   const handleDownload = async () => {
     setIsDownloading(true);
