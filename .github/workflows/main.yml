@@ -34,12 +34,12 @@ jobs:
           node-version: 18
           
       - name: Backend Install
-        working-directory: ./backend  # 👈 backend folder
+        working-directory: ./server  # 👈 Changed from backend to server
         run: |
           npm install
           
       - name: Create env file
-        working-directory: ./backend
+        working-directory: ./server  # 👈 Changed from backend to server
         run: |
           echo "PORT=8000" >> .env
           echo "MONGODB_URI=mongodb://localhost:27017/test" >> .env
@@ -47,7 +47,7 @@ jobs:
           # Add other env variables as needed
           
       - name: Start Backend Server
-        working-directory: ./backend
+        working-directory: ./server  # 👈 Changed from backend to server
         env:
           PORT: 8000
           NODE_ENV: test
