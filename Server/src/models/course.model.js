@@ -9,15 +9,69 @@ const courseSchema = new mongoose.Schema(
       maxlength: 100,
     },
 
+    slug: {
+      type: String,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+
+    shortDescription: {
+      type: String,
+      required: true,
+      maxlength: 200,
+    },
+
     thumbnail: {
-      type: String, 
+      type: String,
       required: true,
     },
 
     description: {
       type: String,
-      required: true, 
+      required: true,
     },
+
+    level: {
+      type: String,
+      enum: ["Beginner", "Intermediate", "Advanced"],
+      default: "Beginner",
+    },
+
+    language: {
+      type: String,
+      default: "Hindi",
+    },
+
+    mode: {
+      type: String,
+      enum: ["Online", "Offline", "Hybrid"],
+      default: "Offline",
+    },
+
+    certificateProvided: {
+      type: Boolean,
+      default: true,
+    },
+
+    projectsIncluded: {
+      type: Number,
+      default: 0,
+    },
+
+    skillsYouLearn: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    careerOpportunities: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
 
     price: {
       type: Number,
@@ -37,6 +91,18 @@ const courseSchema = new mongoose.Schema(
       },
     },
 
+    maxStudents: {
+      type: Number,
+      default: 50,
+    },
+
+    syllabus: [
+      {
+        title: String,
+        topics: [String],
+      },
+    ],
+
     isActive: {
       type: Boolean,
       default: true,
@@ -44,11 +110,21 @@ const courseSchema = new mongoose.Schema(
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", 
+      ref: "User",
     },
   },
   { timestamps: true }
 );
 
+courseSchema.pre("save", function () {
+  if (this.title) {
+    this.slug = this.title
+      .toLowerCase()
+      .replace(/ /g, "-")
+      .replace(/[^\w-]+/g, "");
+  }
+});
+
 const Course = mongoose.model("Course", courseSchema);
+
 export default Course;

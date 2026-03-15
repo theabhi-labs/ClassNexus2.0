@@ -3,30 +3,40 @@ import { Award, Download, Loader2, ChevronRight } from "lucide-react";
 
 const CertificateRow = ({ cert, courseTitle }) => {
   const [isDownloading, setIsDownloading] = useState(false);
-  
+
   const backendBaseUrl = import.meta.env.VITE_API_BASE;
   const downloadUrl = `${backendBaseUrl}/certificate/certificate/${cert.certificateId}`;
 
   const handleDownload = async () => {
     setIsDownloading(true);
+
     try {
-      const response = await fetch(downloadUrl, { method: "GET" });
-      if (!response.ok) throw new Error("Download failed");
+      const response = await fetch(downloadUrl, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Download failed");
+      }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      
+
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${courseTitle?.replace(/\s+/g, '_') || "Certificate"}.pdf`;
+      a.download = `${courseTitle?.replace(/\s+/g, "_") || "Certificate"}.pdf`;
+
       document.body.appendChild(a);
       a.click();
-      
+
       a.remove();
       window.URL.revokeObjectURL(url);
+
     } catch (err) {
       console.error("Download Error:", err);
-      alert("Could not download the certificate. Please check your connection.");
+      alert("Certificate download failed. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -34,29 +44,28 @@ const CertificateRow = ({ cert, courseTitle }) => {
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-5 bg-gradient-to-r from-violet-50/50 to-white border border-violet-100 rounded-[2rem] group hover:shadow-lg hover:shadow-violet-100/50 transition-all gap-4">
-      
-      {/* Left Section: Icon & Info */}
+
+      {/* Left Section */}
       <div className="flex items-start gap-4 w-full sm:w-auto">
         <div className="bg-white p-3 rounded-2xl shadow-sm text-violet-600 flex-shrink-0 border border-violet-50 mt-0.5">
           <Award size={22} />
         </div>
-        
+
         <div className="flex-1 min-w-0">
-          {/* Mobile me pura name dikhane ke liye truncate hataya aur line-clamp lagaya */}
-          <h4 className="font-black text-slate-800 text-sm leading-snug break-words sm:whitespace-normal">
+          <h4 className="font-black text-slate-800 text-sm leading-snug break-words">
             {courseTitle || "Course Certificate"}
           </h4>
+
           <div className="flex items-center gap-2 mt-1.5">
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-               ID: <span className="text-violet-400/80">{cert.certificateId}</span>
-             </p>
-             {/* Subtle indicator for mobile */}
-             <ChevronRight size={10} className="sm:hidden text-violet-200" />
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              ID: <span className="text-violet-400/80">{cert.certificateId}</span>
+            </p>
+            <ChevronRight size={10} className="sm:hidden text-violet-200" />
           </div>
         </div>
       </div>
-      
-      {/* Right Section: Download Button */}
+
+      {/* Download Button */}
       <div className="flex items-center w-full sm:w-auto">
         <button
           onClick={handleDownload}
@@ -68,8 +77,9 @@ const CertificateRow = ({ cert, courseTitle }) => {
           ) : (
             <Download size={14} className="group-hover/btn:-translate-y-0.5 transition-transform" />
           )}
+
           <span className="tracking-widest">
-            {isDownloading ? "DOWNLOADING..." : "DOWNLOAD"}
+            {isDownloading ? "GENERATING..." : "DOWNLOAD"}
           </span>
         </button>
       </div>

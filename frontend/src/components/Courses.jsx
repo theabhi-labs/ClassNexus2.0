@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Calendar, IndianRupee, ArrowRight, Info, CheckCircle, ImageOff } from "lucide-react";
+import { Calendar, IndianRupee, ArrowRight, Info, CheckCircle, ImageOff} from "lucide-react";
 import { Element } from "react-scroll";
 import { getCourses } from "../api/courses.api";
 import { Link } from "react-router-dom";
+
 
 const PublicCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -29,6 +30,7 @@ const PublicCourses = () => {
     setJoinMsg(`Enrollment for "${courseName}" is handled in-person. Visit us to register!`);
     setTimeout(() => setJoinMsg(""), 5000);
   };
+  
 
   // Helper function to check if URL is a direct image link
   const getValidImage = (url) => {
@@ -44,6 +46,8 @@ const PublicCourses = () => {
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
     </div>
   );
+
+  
 
   return (
     <Element name="courses" className="bg-slate-50">

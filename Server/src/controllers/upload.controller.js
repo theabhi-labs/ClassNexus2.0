@@ -77,44 +77,39 @@ export const uploadProfilePhoto = async (req, res) => {
     });
   }
 };
-
 export const uploadStudentDocument = async (req, res) => {
   try {
-
     const { studentId, type } = req.params;
 
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "No PDF uploaded"
-      });
+      return res.status(400).json({ success: false, message: "No PDF uploaded" });
     }
 
     const allowedTypes = ["aadhar", "marksheet10", "marksheet12"];
-
     if (!allowedTypes.includes(type)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid document type"
-      });
+      return res.status(400).json({ success: false, message: "Invalid document type" });
     }
 
     const student = await Student.findById(studentId);
-
     if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found"
-      });
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    // --- FIX 1: Filename ensure karein ki .pdf par hi khatam ho ---
+    let originalName = req.file.originalname;
+    if (!originalName.toLowerCase().endsWith(".pdf")) {
+      originalName += ".pdf";
     }
 
     const oldPublicId = student.documents[type]?.publicId;
 
+    // --- FIX 2: Cloudinary Upload mein 'public_id' manually set karein for replacement ---
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           folder: `studentDocuments/${studentId}`,
-          resource_type: "raw"
+          resource_type: "raw", // PDFs ke liye 'raw' ya 'auto' use hota hai
+          public_id: `${type}_${Date.now()}`, // Unique name for the new file
         },
         (error, result) => {
           if (error) reject(error);
@@ -123,37 +118,33 @@ export const uploadStudentDocument = async (req, res) => {
       ).end(req.file.buffer);
     });
 
+    // DB Update
     student.documents[type] = {
       url: uploadResult.secure_url,
       publicId: uploadResult.public_id,
-      fileName: req.file.originalname
+      fileName: originalName // Corrected name with .pdf
     };
 
+    // Mongoose ko batayein ki nested object change hua hai
+    student.markModified(`documents.${type}`);
     await student.save();
 
-    // delete old file after successful save
+    // --- FIX 3: Purani file ko delete karna ---
     if (oldPublicId) {
       await cloudinary.uploader.destroy(oldPublicId, {
         resource_type: "raw"
-      });
+      }).catch(err => console.log("Old file delete failed, moving on..."));
     }
 
     res.status(200).json({
       success: true,
-      message: "Document uploaded successfully",
+      message: "Document replaced successfully",
       document: student.documents[type]
     });
 
   } catch (error) {
-
     console.error(error);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message
-    });
-
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -190,29 +181,24 @@ export const downloadStudentDocument = async (req, res) => {
 
 export const previewStudentDocument = async (req, res) => {
   try {
-
     const { studentId, type } = req.params;
-
     const student = await Student.findById(studentId);
 
     if (!student || !student.documents[type]) {
-      return res.status(404).json({
-        success: false,
-        message: "Document not found"
-      });
+      return res.status(404).json({ success: false, message: "Document not found" });
     }
 
     const fileUrl = student.documents[type].url;
 
-    // browser me preview
+    // --- YE DO LINES MAGIC KARENGI ---
+    // 1. Browser ko batayenge ki ye PDF hai
+    res.setHeader("Content-Type", "application/pdf");
+    // 2. 'inline' ka matlab hai browser ke andar kholo, download mat karo
+    res.setHeader("Content-Disposition", "inline");
+
+    // File ko redirect karein
     res.redirect(fileUrl);
-
   } catch (error) {
-
-    res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
-
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
