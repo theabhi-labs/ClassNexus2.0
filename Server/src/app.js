@@ -4,16 +4,28 @@ import cookieParser from "cookie-parser"
 
 const app = express()
 const allowedOrigins = [
-  'https://class-nexus2-0.vercel.app',
-  'http://localhost:5173',      // Vite dev server
-  'http://localhost:4173',      // Vite preview server
-  'https://class-nexus2-0-pcx3bt21i-abhishek-yadavs-projects-c0d518dd.vercel.app' // Preview URL
+  "https://class-nexus2-0.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "https://class-nexus2-0-pcx3bt21i-abhishek-yadavs-projects-c0d518dd.vercel.app"
 ];
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+
+    },
+    credentials: true
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 

@@ -1,3 +1,4 @@
+import React from 'react'
 import { Home, BarChart3, Image, Phone } from "lucide-react";
 
 export default function SettingsNav({ activeTab, setActiveTab }) {

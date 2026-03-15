@@ -1,3 +1,4 @@
+import React from 'react'  // ✅ ADD THIS LINE
 import { Toaster } from "react-hot-toast";
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from "react-router-dom";

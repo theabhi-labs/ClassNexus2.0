@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState } from "react";
 import SettingsNav from "./SettingsNav";
 import HeroSettings from "./HeroSettings";
@@ -5,6 +6,7 @@ import BrandSettings from "./BrandSettings";
 import StatsSettings from "./StatsSettings";
 import FooterSettings from "./FooterSettings";
 import LivePreview from "./LivePreview";
+
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("hero");

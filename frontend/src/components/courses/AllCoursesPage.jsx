@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Search, Filter, BookOpen, Clock, ChevronRight } from "lucide-react";
 import { getCourses } from "../../api/courses.api";
 

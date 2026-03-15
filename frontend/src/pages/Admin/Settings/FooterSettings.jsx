@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React from 'react'
+import {useState } from "react";
 import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 
 export default function FooterSettings() {

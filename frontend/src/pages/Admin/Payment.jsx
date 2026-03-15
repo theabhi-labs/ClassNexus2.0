@@ -1,3 +1,4 @@
+import React from 'react'
 import { useEffect, useState } from "react";
 import { getAllStudentPayments, setupPayment, updatePayment } from "../../api/payment.api";
 

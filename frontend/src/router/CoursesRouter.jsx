@@ -1,3 +1,4 @@
+import React from 'react'
 import { Routes, Route } from "react-router-dom";
 import Courses from "../components/Courses";
 import CourseDetailPage from "../components/courses/CourseDetailPage";

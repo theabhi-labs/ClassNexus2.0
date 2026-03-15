@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { User, Linkedin, Mail, X, ExternalLink, Award, GraduationCap } from 'lucide-react'; 
 import { Element } from 'react-scroll';
 

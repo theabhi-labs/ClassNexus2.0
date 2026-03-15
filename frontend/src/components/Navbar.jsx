@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React,  { useState, useEffect } from "react";
 import { Menu, X, LogOut, AlertCircle, User } from "lucide-react";
 import { scrollToSection } from "../utils/scrollRouter";
 import { registerUser, loginUser, getCurrentUser, logoutUser } from "../api/auth.api.js";

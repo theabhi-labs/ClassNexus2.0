@@ -1,3 +1,4 @@
+import React from "react";
 import { Element } from "react-scroll";
 import { Phone, MessageCircle, Send, Youtube, Instagram, MapPin, ArrowUpRight, ExternalLink } from "lucide-react";
 

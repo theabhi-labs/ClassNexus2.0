@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Calendar, IndianRupee, ArrowRight, Info, CheckCircle, ImageOff } from "lucide-react";
 import { Element } from "react-scroll";
 import { getCourses } from "../api/courses.api";
