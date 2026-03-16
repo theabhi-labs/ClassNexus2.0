@@ -1,37 +1,30 @@
-import React from 'react'
-import { Home, BarChart3, Image, Phone } from "lucide-react";
+import React from 'react';
 
 export default function SettingsNav({ activeTab, setActiveTab }) {
   const menuItems = [
-    { id: "brand", label: "Brand", icon: Image },
-    { id: "hero", label: "Hero", icon: Home },
-    { id: "stats", label: "Stats", icon: BarChart3 },
-    { id: "footer", label: "Footer", icon: Phone },
+    { id: "brand", label: "Brand" },
+    { id: "hero", label: "Hero" },
+    { id: "stats", label: "Stats" },
+    { id: "footer", label: "Footer" },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
-      <div className="flex justify-around items-center h-16">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center text-xs transition-all duration-200 ${
-                isActive
-                  ? "text-blue-600"
-                  : "text-gray-500 hover:text-blue-500"
-              }`}
-            >
-              <Icon className="w-5 h-5 mb-1" />
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
+    <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl w-fit">
+      {menuItems.map((item) => (
+        <button
+          key={item.id}
+          onClick={() => setActiveTab(item.id)}
+          className={`
+            px-6 py-2 rounded-xl text-xs font-bold transition-all duration-300
+            ${activeTab === item.id 
+              ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" 
+              : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }
+          `}
+        >
+          {item.label}
+        </button>
+      ))}
     </div>
   );
 }

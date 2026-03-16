@@ -1,92 +1,134 @@
-import React from 'react'
-import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../../components/Admin/Sidebar";
 import Header from "../../components/Admin/Header";
-import { Menu, X } from "lucide-react";
+import { X, LayoutPanelLeft } from "lucide-react";
 
 const AdminLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Optional: close mobile sidebar on route change (if using react-router v6 data router)
-  // useEffect(() => {
-  //   setIsMobileOpen(false);
-  // }, [location.pathname]);
+  const location = useLocation();
 
   const toggleMobile = () => setIsMobileOpen((prev) => !prev);
   const toggleCollapse = () => setIsCollapsed((prev) => !prev);
 
+  // Auto-close mobile sidebar on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  // Page Title Logic (Handles hyphens and capitalization)
+  const getPageTitle = () => {
+    const path = location.pathname.split('/').pop();
+    if (!path || path === 'admin') return "Dashboard Overview";
+    return path.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
   return (
-    <div className="flex h-dvh flex-col bg-gray-50 dark:bg-gray-950 lg:flex-row">
-      {/* ─── Desktop Sidebar ──────────────────────────────────────── */}
+    <div className="flex min-h-screen bg-[#F8FAFC] font-sans selection:bg-indigo-100 selection:text-indigo-700">
+      
+      {/* ─── Desktop Sidebar (Fixed Position) ─── */}
       <aside
         className={`
-          hidden lg:flex lg:flex-col
-          border-r border-gray-200 dark:border-gray-800
-          bg-white dark:bg-gray-900
-          shadow-sm
-          transition-all duration-300 ease-in-out
-          ${isCollapsed ? "w-16" : "w-64 xl:w-72"}
+          fixed inset-y-0 left-0 z-50 hidden lg:block
+          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${isCollapsed ? "w-[88px]" : "w-72"}
         `}
       >
         <Sidebar collapsed={isCollapsed} />
       </aside>
 
-      {/* ─── Mobile Drawer ────────────────────────────────────────── */}
+      {/* ─── Mobile Sidebar (Drawer) ─── */}
       <div
         className={`
-          fixed inset-y-0 left-0 z-50 lg:hidden
-          w-72 sm:w-80
-          bg-white dark:bg-gray-900
-          shadow-2xl
-          transition-transform duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-[100] lg:hidden
+          w-72 bg-white shadow-2xl
+          transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <div className="flex h-16 items-center justify-end border-b border-gray-200 dark:border-gray-800 px-4">
-          <button
-            onClick={toggleMobile}
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-            aria-label="Close menu"
+        <div className="flex h-20 items-center justify-between px-8 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-50 rounded-lg">
+              <LayoutPanelLeft size={16} className="text-[#4F46E5]" />
+            </div>
+            <span className="font-black text-slate-900 tracking-tighter uppercase text-[10px]">Navigation</span>
+          </div>
+          <button 
+            onClick={toggleMobile} 
+            className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90"
           >
-            <X size={24} />
+            <X size={20} className="text-slate-400" />
           </button>
         </div>
-        <Sidebar collapsed={false} mobile />
+        <div className="h-[calc(100vh-80px)] overflow-y-auto">
+          <Sidebar collapsed={false} mobile />
+        </div>
       </div>
 
-      {/* Mobile backdrop */}
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-          onClick={toggleMobile}
-          aria-hidden="true"
-        />
-      )}
+      {/* Mobile Backdrop Overlay */}
+      <div
+        className={`
+          fixed inset-0 z-[90] bg-slate-900/20 backdrop-blur-sm lg:hidden 
+          transition-all duration-500
+          ${isMobileOpen ? "opacity-100 visible" : "opacity-0 invisible"}
+        `}
+        onClick={toggleMobile}
+      />
 
-      {/* ─── Main Area ────────────────────────────────────────────── */}
-      <div className="flex min-h-0 flex-1 flex-col">
-        {/* Header */}
+      {/* ─── Main Content Wrapper ─── */}
+      <div 
+        className={`
+          flex flex-1 flex-col min-w-0 min-h-screen
+          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${isCollapsed ? "lg:pl-[88px]" : "lg:pl-72"}
+        `}
+      >
+        {/* Header Component */}
         <Header
-          onMobileToggle={toggleMobile}
+          onMobileMenuToggle={toggleMobile}
           onCollapseToggle={toggleCollapse}
           isCollapsed={isCollapsed}
         />
 
-        {/* Content */}
-        <main
-          className={`
-            relative flex-1 overflow-y-auto
-            bg-gray-50/70 dark:bg-gray-950/50
-            transition-all duration-300
-            lg:${isCollapsed ? "ml-16" : "ml-64 xl:ml-72"}
-          `}
-        >
-          <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8">
-            <Outlet />
+        {/* Dynamic Content Area */}
+        <main className="flex-1 p-5 lg:p-10">
+          <div className="mx-auto max-w-[1400px]">
+            
+            {/* Dynamic Page Header */}
+            <header className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="flex items-center gap-2 mb-3">
+                   <div className="h-1 w-1 rounded-full bg-[#4F46E5]" />
+                   <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#4F46E5]/80">System Management</span>
+                </div>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight sm:text-4xl">
+                  {getPageTitle()}
+                </h1>
+                <p className="text-sm text-slate-500 font-medium mt-2 max-w-2xl">
+                  Welcome back, Arjun. Monitoring your academy performance and architectural data logs.
+                </p>
+            </header>
+
+            {/* Main Content (Outlet) */}
+            <div className="animate-in fade-in zoom-in-[0.98] duration-700 delay-150">
+              <Outlet />
+            </div>
           </div>
         </main>
+
+        {/* Minimalist Industrial Footer */}
+        <footer className="px-6 lg:px-10 py-8 flex flex-col sm:flex-row items-center justify-between border-t border-slate-200/60 gap-4">
+          <div className="flex items-center gap-4">
+            <p className="text-[10px] text-slate-400 font-black tracking-[0.15em] uppercase">
+              &copy; 2026 EDUADMIN • Core v3.4.0
+            </p>
+          </div>
+          <div className="flex gap-8">
+             <a href="#" className="text-[10px] text-slate-400 font-bold hover:text-[#4F46E5] uppercase tracking-widest transition-colors">Documentation</a>
+             <a href="#" className="text-[10px] text-slate-400 font-bold hover:text-[#4F46E5] uppercase tracking-widest transition-colors">API Status</a>
+             <a href="#" className="text-[10px] text-slate-400 font-bold hover:text-[#4F46E5] uppercase tracking-widest transition-colors">Support</a>
+          </div>
+        </footer>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { body, validationResult } from "express-validator"
 import { query } from "express-validator";
 import { param } from "express-validator";
+import Joi from "joi";
 
 const userRegistrationValidator = [
   body("name")
@@ -130,6 +131,35 @@ export const deleteStudentValidator = [
     .withMessage("Invalid student ID")
 ];
 
+
+export const createCourseValidator = Joi.object({
+  title: Joi.string().required(),
+  thumbnail: Joi.string().required(),
+  description: Joi.string().required(),
+  shortDescription: Joi.string().required(),
+  price: Joi.number().required(),
+  duration: Joi.object({
+    value: Joi.number().required(),
+    unit: Joi.string().required()
+  }).required(),
+  maxStudents: Joi.number().required(),
+  
+  // ✅ Add these optional fields
+  level: Joi.string().optional(),
+  language: Joi.string().optional(),
+  mode: Joi.string().optional(),
+  certificateProvided: Joi.boolean().optional(),
+  projectsIncluded: Joi.number().optional(),
+  
+  skillsYouLearn: Joi.array().items(Joi.string()).optional(),
+  careerOpportunities: Joi.array().items(Joi.string()).optional(),
+  syllabus: Joi.array().items(
+    Joi.object({
+      title: Joi.string().required(),
+      topics: Joi.array().items(Joi.string()).required()
+    })
+  ).optional()
+});
 
 export {
     userRegistrationValidator,

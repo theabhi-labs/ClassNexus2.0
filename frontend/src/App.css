@@ -4,6 +4,15 @@
   padding: 2rem;
   text-align: center;
 }
+:root {
+  --bg-main: #F8FAFC;       /* Slate-50 */
+  --bg-card: #FFFFFF;       /* Pure White */
+  --primary: #4F46E5;       /* Indigo-600 */
+  --primary-hover: #4338CA; /* Indigo-700 */
+  --text-main: #0F172A;     /* Slate-900 */
+  --text-muted: #64748B;    /* Slate-500 */
+  --border: #E2E8F0;       /* Slate-200 */
+}
 
 .logo {
   height: 6em;

@@ -4,7 +4,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 
 // --- CREATE COURSE ---
-const createCourse = asyncHandler(async (req, res) => {
+ const createCourse = asyncHandler(async (req, res) => {
   const {
     title,
     thumbnail,
@@ -19,10 +19,11 @@ const createCourse = asyncHandler(async (req, res) => {
     mode,
     certificateProvided,
     projectsIncluded,
-    syllabus
+    maxStudents,
+    syllabus,
   } = req.body;
 
-  // 1️⃣ Strict Validation
+  // ✅ Strict Validation
   if (
     [title, thumbnail, shortDescription, description].some(
       (field) => !field || field.trim() === ""
@@ -36,49 +37,36 @@ const createCourse = asyncHandler(async (req, res) => {
     );
   }
 
-  // 2️⃣ Create Course
+  // ✅ Create Course
   const course = await Course.create({
     title,
-    thumbnail,
+    thumbnail, // matches schema
     shortDescription,
-    description,
-
+    description, // matches schema
     price: Number(price),
-
     duration: {
       value: Number(duration.value),
       unit: duration.unit || "months",
     },
-
     level: level || "Beginner",
     language: language || "Hindi",
     mode: mode || "Offline",
-
     certificateProvided:
       typeof certificateProvided === "boolean"
         ? certificateProvided
         : true,
-
     projectsIncluded: Number(projectsIncluded) || 0,
-
-    skillsYouLearn: Array.isArray(skillsYouLearn)
-      ? skillsYouLearn
-      : [],
-
+    maxStudents: Number(maxStudents) || 0,
+    skillsYouLearn: Array.isArray(skillsYouLearn) ? skillsYouLearn : [],
     careerOpportunities: Array.isArray(careerOpportunities)
       ? careerOpportunities
       : [],
-
     syllabus: Array.isArray(syllabus) ? syllabus : [],
-
     // createdBy: req.user?._id
   });
 
   if (!course) {
-    throw new ApiError(
-      500,
-      "Something went wrong while creating the course"
-    );
+    throw new ApiError(500, "Something went wrong while creating the course");
   }
 
   return res
@@ -90,31 +78,66 @@ const createCourse = asyncHandler(async (req, res) => {
 const updateCourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
 
-  // Pehle check karein course exist karta hai
+  // Check if course exists
   const existingCourse = await Course.findById(courseId);
   if (!existingCourse) {
     throw new ApiError(404, "Course not found");
   }
 
-  // Direct update with all fields from req.body
+  const updateData = {
+    title: req.body.title ?? existingCourse.title,
+    thumbnail: req.body.thumbnail ?? existingCourse.thumbnail,
+    shortDescription:
+      req.body.shortDescription ?? existingCourse.shortDescription,
+    description: req.body.description ?? existingCourse.description,
+
+    price: req.body.price
+      ? Number(req.body.price)
+      : existingCourse.price,
+
+    duration: req.body.duration
+      ? {
+          value: Number(req.body.duration.value),
+          unit: req.body.duration.unit || "months",
+        }
+      : existingCourse.duration,
+
+    level: req.body.level ?? existingCourse.level,
+    language: req.body.language ?? existingCourse.language,
+    mode: req.body.mode ?? existingCourse.mode,
+
+    certificateProvided:
+      typeof req.body.certificateProvided === "boolean"
+        ? req.body.certificateProvided
+        : existingCourse.certificateProvided,
+
+    projectsIncluded:
+      req.body.projectsIncluded !== undefined
+        ? Number(req.body.projectsIncluded)
+        : existingCourse.projectsIncluded,
+
+    maxStudents:
+      req.body.maxStudents !== undefined
+        ? Number(req.body.maxStudents)
+        : existingCourse.maxStudents,
+
+    skillsYouLearn: Array.isArray(req.body.skillsYouLearn)
+      ? req.body.skillsYouLearn
+      : existingCourse.skillsYouLearn,
+
+    careerOpportunities: Array.isArray(req.body.careerOpportunities)
+      ? req.body.careerOpportunities
+      : existingCourse.careerOpportunities,
+
+    syllabus: Array.isArray(req.body.syllabus)
+      ? req.body.syllabus
+      : existingCourse.syllabus,
+  };
+
   const updatedCourse = await Course.findByIdAndUpdate(
     courseId,
-    {
-      $set: {
-        ...req.body,
-        // Optional: Ensure duration is properly formatted if sent
-        ...(req.body.duration && {
-            duration: {
-                value: Number(req.body.duration.value),
-                unit: req.body.duration.unit
-            }
-        })
-      }
-    },
-    { 
-      new: true, // Returns updated doc
-      runValidators: true // Checks schema rules
-    }
+    { $set: updateData },
+    { new: true, runValidators: true }
   );
 
   return res.status(200).json(

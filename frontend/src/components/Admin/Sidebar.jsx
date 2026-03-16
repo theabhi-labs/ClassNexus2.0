@@ -1,117 +1,126 @@
-
 import { NavLink } from "react-router-dom";
 import {
-  Home,
-  Users,
-  BookOpen,
-  Wallet,
-  BarChart3,
-  Settings,
-  GraduationCap,
-  LogOut,
+  Users, BookOpen, Wallet, BarChart3, Settings,
+  GraduationCap, LogOut, Sparkles, LayoutGrid
 } from "lucide-react";
 
 const navItems = [
-  { name: "Dashboard", path: "/admin", icon: Home },
-  { name: "Students", path: "/admin/students", icon: Users },
-  { name: "Courses", path: "/admin/courses", icon: BookOpen },
-  { name: "Payments", path: "/admin/payments", icon: Wallet },
-  { name: "Analytics", path: "/admin/analytics", icon: BarChart3 },
-  { name: "Settings", path: "/admin/settings", icon: Settings },
+  { label: "Main Menu", items: [
+      { name: "Dashboard", path: "/admin", icon: LayoutGrid },
+      { name: "Students", path: "/admin/students", icon: Users },
+      { name: "Courses", path: "/admin/courses", icon: BookOpen },
+  ]},
+  { label: "Management", items: [
+      { name: "Payments", path: "/admin/payments", icon: Wallet },
+      { name: "Analytics", path: "/admin/analytics", icon: BarChart3 },
+  ]},
+  { label: "Other", items: [
+      { name: "Settings", path: "/admin/settings", icon: Settings },
+  ]}
 ];
 
 export default function Sidebar({ collapsed = false, mobile = false }) {
   return (
-    <div
-      className={`
-        flex h-full flex-col
-        bg-white dark:bg-gray-900
-        border-r border-gray-200 dark:border-gray-800
-        shadow-sm
-        ${collapsed ? "w-16" : mobile ? "w-full" : "w-64 xl:w-72"}
-        transition-all duration-300 ease-in-out
-      `}
-    >
-      {/* Logo / Brand */}
-      <div
-        className={`
-          flex h-16 items-center justify-center md:justify-start
-          border-b border-gray-100 dark:border-gray-800
-          ${collapsed ? "px-2" : "px-5"}
-        `}
-      >
-        {collapsed ? (
-          <GraduationCap className="h-8 w-8 text-indigo-600 dark:text-indigo-500" />
-        ) : (
-          <div className="flex items-center gap-3">
-            <GraduationCap className="h-8 w-8 text-indigo-600 dark:text-indigo-500" />
-            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-              EduAdmin
-            </span>
+    <div className={`
+      flex h-full flex-col bg-white
+      border-r border-slate-200/60
+      ${collapsed ? "w-[88px]" : mobile ? "w-full" : "w-72"}
+      transition-all duration-500 ease-[cubic-bezier(0.4, 0, 0.2, 1)]
+    `}>
+      
+      {/* Brand Section */}
+      <div className={`flex h-20 items-center ${collapsed ? "justify-center" : "px-8"}`}>
+        <div className="flex items-center gap-3 group cursor-pointer">
+          <div className="p-2.5 bg-[#4F46E5] rounded-xl shadow-lg shadow-indigo-100 group-hover:rotate-6 transition-transform">
+            <GraduationCap className="h-6 w-6 text-white" />
           </div>
-        )}
+          {!collapsed && (
+            <div className="flex flex-col">
+              <span className="text-lg font-black text-slate-900 tracking-tighter leading-none">
+                EDU<span className="text-[#4F46E5]">ADMIN</span>
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Control Panel</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-6 space-y-1.5 overflow-y-auto">
-        {navItems.map((item) => {
-          const Icon = item.icon;
+      <nav className="flex-1 px-4 py-6 space-y-8 overflow-y-auto custom-scrollbar">
+        {navItems.map((group, idx) => (
+          <div key={idx} className="space-y-3">
+            {!collapsed && (
+              <p className="px-4 text-[10px] font-black uppercase tracking-[2px] text-slate-400/80">
+                {group.label}
+              </p>
+            )}
+            <div className="space-y-1.5">
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  // Added "end" to prevent Dashboard from staying active on all sub-routes
+                  end={item.path === "/admin"}
+                  className={({ isActive }) => `
+                    group relative flex items-center rounded-2xl transition-all duration-300
+                    ${collapsed ? "justify-center h-12 w-12 mx-auto" : "gap-3 px-4 py-3"}
+                    ${isActive 
+                      ? "bg-indigo-50 text-[#4F46E5] shadow-sm ring-1 ring-indigo-100" 
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}
+                  `}
+                >
+                  {/* FIX: Use a function here to pass isActive to child elements */}
+                  {({ isActive }) => (
+                    <>
+                      <item.icon 
+                        size={collapsed ? 22 : 19} 
+                        className={`${isActive ? "text-[#4F46E5]" : "group-hover:scale-110 transition-transform"}`} 
+                      />
+                      
+                      {!collapsed && (
+                        <span className="text-sm font-bold tracking-tight">
+                          {item.name}
+                        </span>
+                      )}
+                      
+                      {/* Active Marker */}
+                      {isActive && !collapsed && (
+                        <div className="absolute right-3 w-1.5 h-1.5 bg-[#4F46E5] rounded-full shadow-[0_0_10px_rgba(79,70,229,0.5)]" />
+                      )}
 
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === "/admin"}
-              className={({ isActive }) =>
-                `group flex items-center rounded-xl transition-all duration-200
-                ${collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"}
-                ${
-                  isActive
-                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-medium"
-                    : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/60"
-                }
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900`
-              }
-              title={collapsed ? item.name : undefined}
-            >
-              <Icon
-                size={collapsed ? 24 : 20}
-                className={`
-                  flex-shrink-0 transition-colors duration-200
-                  ${collapsed ? "group-hover:text-indigo-600 dark:group-hover:text-indigo-400" : ""}
-                `}
-              />
-
-              {!collapsed && (
-                <span className="text-sm font-medium truncate">{item.name}</span>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      {/* Bottom Section - Logout / Version */}
-      <div className="mt-auto border-t border-gray-100 dark:border-gray-800">
-        {!collapsed ? (
-          <div className="p-4 space-y-3">
-            {/* Logout Button */}
-            <button
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-700 dark:text-gray-300 dark:hover:bg-red-900/20 dark:hover:text-red-400 rounded-xl transition-all duration-200"
-            >
-              <LogOut size={20} />
-              <span className="text-sm font-medium">Logout</span>
-            </button>
-
-            {/* Version / Copyright */}
-            <div className="text-xs text-gray-500 dark:text-gray-500 text-center">
-              v1.0 • {new Date().getFullYear()}
+                      {/* Tooltip for Collapsed State */}
+                      {collapsed && (
+                        <div className="absolute left-full ml-4 px-3 py-1 bg-slate-900 text-white text-[10px] font-bold rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                          {item.name}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              ))}
             </div>
           </div>
-        ) : (
-          <div className="py-4 flex justify-center">
-            <LogOut size={20} className="text-gray-500 hover:text-red-600 transition-colors" />
+        ))}
+      </nav>
+
+
+      {/* Logout Section */}
+      <div className="p-4 border-t border-slate-100">
+        <button className={`
+          flex items-center gap-3 w-full p-2.5 rounded-2xl
+          hover:bg-rose-50 group transition-all
+          ${collapsed ? "justify-center" : ""}
+        `}>
+          <div className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-rose-100 group-hover:text-rose-600 transition-all`}>
+            <LogOut size={18} />
           </div>
-        )}
+          {!collapsed && (
+            <div className="text-left">
+              <p className="text-sm font-bold text-slate-700 group-hover:text-rose-600">Logout</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">End Session</p>
+            </div>
+          )}
+        </button>
       </div>
     </div>
   );

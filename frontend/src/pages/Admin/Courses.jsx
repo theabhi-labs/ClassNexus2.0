@@ -18,27 +18,27 @@ const Courses = () => {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [expandedSyllabus, setExpandedSyllabus] = useState({});
-  
+
   const formRef = useRef(null);
 
   // Default form state with all fields
-  const defaultForm = {
-    title: "",
-    thumbnail: "",
-    shortDescription: "",
-    description: "",
-    price: "",
-    duration: { value: "", unit: "months" },
-    level: "Beginner",
-    language: "English",
-    mode: "Online",
-    certificateProvided: false,
-    projectsIncluded: 0,
-    maxStudents: "",
-    skillsYouLearn: [],
-    careerOpportunities: [],
-    syllabus: [{ title: "", topics: [""] }]
-  };
+const defaultForm = {
+  title: "",
+  thumbnail: "",
+  shortDescription: "",
+  description: "",
+  price: "",
+  duration: { value: "", unit: "months" },
+  level: "Beginner",
+  language: "English",
+  mode: "Online",
+  certificateProvided: false,
+  projectsIncluded: 0,
+  maxStudents: "",
+  skillsYouLearn: [],
+  careerOpportunities: [],
+  syllabus: [{ title: "", topics: [""] }]
+};
 
   const [form, setForm] = useState(defaultForm);
   const [skillInput, setSkillInput] = useState("");
@@ -75,7 +75,7 @@ const Courses = () => {
   // Validate form
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!form.title.trim()) newErrors.title = "Title is required";
     if (!form.thumbnail.trim()) newErrors.thumbnail = "Thumbnail URL is required";
     if (!form.shortDescription.trim()) newErrors.shortDescription = "Short description is required";
@@ -83,11 +83,11 @@ const Courses = () => {
     if (!form.price || form.price <= 0) newErrors.price = "Valid price is required";
     if (!form.duration.value || form.duration.value <= 0) newErrors.duration = "Duration is required";
     if (!form.maxStudents || form.maxStudents <= 0) newErrors.maxStudents = "Max students is required";
-    
+
     // Validate syllabus
     const invalidModules = form.syllabus.filter(m => !m.title.trim());
     if (invalidModules.length > 0) newErrors.syllabus = "All modules need titles";
-    
+
     form.syllabus.forEach((module, idx) => {
       const invalidTopics = module.topics.filter(t => !t.trim());
       if (invalidTopics.length > 0) {
@@ -141,8 +141,8 @@ const Courses = () => {
   const addTopic = (moduleIndex) => {
     setForm(prev => ({
       ...prev,
-      syllabus: prev.syllabus.map((module, i) => 
-        i === moduleIndex 
+      syllabus: prev.syllabus.map((module, i) =>
+        i === moduleIndex
           ? { ...module, topics: [...module.topics, ""] }
           : module
       )
@@ -152,7 +152,7 @@ const Courses = () => {
   const removeTopic = (moduleIndex, topicIndex) => {
     setForm(prev => ({
       ...prev,
-      syllabus: prev.syllabus.map((module, i) => 
+      syllabus: prev.syllabus.map((module, i) =>
         i === moduleIndex && module.topics.length > 1
           ? { ...module, topics: module.topics.filter((_, j) => j !== topicIndex) }
           : module
@@ -163,7 +163,7 @@ const Courses = () => {
   const updateModuleTitle = (index, value) => {
     setForm(prev => ({
       ...prev,
-      syllabus: prev.syllabus.map((module, i) => 
+      syllabus: prev.syllabus.map((module, i) =>
         i === index ? { ...module, title: value } : module
       )
     }));
@@ -172,14 +172,14 @@ const Courses = () => {
   const updateTopic = (moduleIndex, topicIndex, value) => {
     setForm(prev => ({
       ...prev,
-      syllabus: prev.syllabus.map((module, i) => 
-        i === moduleIndex 
+      syllabus: prev.syllabus.map((module, i) =>
+        i === moduleIndex
           ? {
-              ...module,
-              topics: module.topics.map((topic, j) => 
-                j === topicIndex ? value : topic
-              )
-            }
+            ...module,
+            topics: module.topics.map((topic, j) =>
+              j === topicIndex ? value : topic
+            )
+          }
           : module
       )
     }));
@@ -195,7 +195,7 @@ const Courses = () => {
   // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       formRef.current?.scrollIntoView({ behavior: "smooth" });
       return;
@@ -203,25 +203,28 @@ const Courses = () => {
 
     setIsSubmitting(true);
 
-    // Clean up data
+    // Prepare payload for backend
     const payload = {
-      ...form,
+      title: form.title,
+      thumbnail: form.thumbnail,
       price: Number(form.price),
-      maxStudents: Number(form.maxStudents),
+      duration: { ...form.duration, value: Number(form.duration.value) },
+      level: form.level || "Beginner",
+      language: form.language || "Hindi",
+      mode: form.mode || "Offline",
+      certificateProvided: typeof form.certificateProvided === "boolean" ? form.certificateProvided : true,
       projectsIncluded: Number(form.projectsIncluded),
-      duration: { 
-        ...form.duration, 
-        value: Number(form.duration.value) 
-      },
+      maxStudents: Number(form.maxStudents),
+      shortDescription: form.shortDescription,
+      description: form.description,
       skillsYouLearn: form.skillsYouLearn.filter(s => s.trim()),
       careerOpportunities: form.careerOpportunities.filter(c => c.trim()),
-      syllabus: form.syllabus
-        .filter(m => m.title.trim())
-        .map(m => ({
-          title: m.title.trim(),
-          topics: m.topics.filter(t => t.trim())
-        }))
+      syllabus: (form.syllabus || [])
+        .filter(m => m.title?.trim())
+        .map(m => ({ title: m.title.trim(), topics: (m.topics || []).filter(t => t.trim()) }))
     };
+
+    console.log("DEBUG: Payload to send:", payload);
 
     try {
       if (editingId) {
@@ -241,28 +244,36 @@ const Courses = () => {
   };
 
   // Edit handler
-  const handleEdit = (course) => {
-    setEditingId(course._id);
-    setForm({
-      title: course.title || "",
-      thumbnail: course.thumbnail || "",
-      shortDescription: course.shortDescription || "",
-      description: course.description || "",
-      price: course.price || "",
-      duration: course.duration || { value: "", unit: "months" },
-      level: course.level || "Beginner",
-      language: course.language || "English",
-      mode: course.mode || "Online",
-      certificateProvided: course.certificateProvided || false,
-      projectsIncluded: course.projectsIncluded || 0,
-      maxStudents: course.maxStudents || "",
-      skillsYouLearn: course.skillsYouLearn || [],
-      careerOpportunities: course.careerOpportunities || [],
-      syllabus: course.syllabus?.length ? course.syllabus : [{ title: "", topics: [""] }]
-    });
-    formRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+const handleEdit = (course) => {
+  setEditingId(course._id);
 
+  setForm({
+    title: course.title || "",
+    thumbnail: course.thumbnail || "",
+    shortDescription: course.shortDescription || "",
+    description: course.description || "",
+    price: course.price || "",
+    duration: course.duration || { value: "", unit: "months" },
+
+    level: course.level || "Beginner",
+    language: course.language || "English",
+    mode: course.mode || "Online",
+
+    certificateProvided: course.certificateProvided ?? true,
+    projectsIncluded: course.projectsIncluded || 0,
+    maxStudents: course.maxStudents || "",
+
+    skillsYouLearn: course.skillsYouLearn || [],
+    careerOpportunities: course.careerOpportunities || [],
+
+    syllabus:
+      course.syllabus?.length
+        ? course.syllabus
+        : [{ title: "", topics: [""] }],
+  });
+
+  formRef.current?.scrollIntoView({ behavior: "smooth" });
+};
   const handleCancel = () => {
     setEditingId(null);
     setForm(defaultForm);
@@ -290,7 +301,7 @@ const Courses = () => {
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-        
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -330,7 +341,7 @@ const Courses = () => {
         </div>
 
         <div className="flex flex-col-reverse lg:grid lg:grid-cols-12 lg:gap-8">
-          
+
           {/* LEFT: Courses Table */}
           <div className="lg:col-span-7 mt-8 lg:mt-0">
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -370,8 +381,8 @@ const Courses = () => {
                         <tr key={course._id} className="hover:bg-slate-50/50 transition-colors group">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-4">
-                              <img 
-                                src={course.thumbnail || "https://via.placeholder.com/400x300?text=No+Image"} 
+                              <img
+                                src={course.thumbnail || "https://via.placeholder.com/400x300?text=No+Image"}
                                 className="h-14 w-14 rounded-lg object-cover bg-slate-100 border border-slate-200"
                                 alt={course.title}
                                 onError={(e) => e.target.src = "https://via.placeholder.com/400x300?text=Error"}
@@ -401,11 +412,10 @@ const Courses = () => {
                             <span className="font-bold text-slate-900">₹{course.price?.toLocaleString()}</span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              course.isActive 
-                                ? 'bg-green-100 text-green-700' 
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${course.isActive
+                                ? 'bg-green-100 text-green-700'
                                 : 'bg-slate-100 text-slate-600'
-                            }`}>
+                              }`}>
                               {course.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </td>
@@ -475,13 +485,13 @@ const Courses = () => {
 
               {/* Form Body */}
               <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-                
+
                 {/* Basic Information */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-2">
                     <Layers size={14} /> Basic Information
                   </h3>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       Course Title <span className="text-red-500">*</span>
@@ -490,10 +500,9 @@ const Courses = () => {
                       required
                       placeholder="e.g., Advanced JavaScript Mastery"
                       value={form.title}
-                      onChange={(e) => setForm(p => ({...p, title: e.target.value}))}
-                      className={`w-full rounded-lg border p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${
-                        errors.title ? 'border-red-500 bg-red-50' : 'border-slate-200'
-                      }`}
+                      onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
+                      className={`w-full rounded-lg border p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${errors.title ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                        }`}
                     />
                     {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
                   </div>
@@ -506,10 +515,9 @@ const Courses = () => {
                       required
                       placeholder="https://example.com/image.jpg"
                       value={form.thumbnail}
-                      onChange={(e) => setForm(p => ({...p, thumbnail: e.target.value}))}
-                      className={`w-full rounded-lg border p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${
-                        errors.thumbnail ? 'border-red-500 bg-red-50' : 'border-slate-200'
-                      }`}
+                      onChange={(e) => setForm(p => ({ ...p, thumbnail: e.target.value }))}
+                      className={`w-full rounded-lg border p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${errors.thumbnail ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                        }`}
                     />
                     {errors.thumbnail && <p className="text-red-500 text-xs mt-1">{errors.thumbnail}</p>}
                   </div>
@@ -527,10 +535,9 @@ const Courses = () => {
                           required
                           placeholder="2999"
                           value={form.price}
-                          onChange={(e) => setForm(p => ({...p, price: e.target.value}))}
-                          className={`w-full rounded-lg border pl-9 p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${
-                            errors.price ? 'border-red-500 bg-red-50' : 'border-slate-200'
-                          }`}
+                          onChange={(e) => setForm(p => ({ ...p, price: e.target.value }))}
+                          className={`w-full rounded-lg border pl-9 p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${errors.price ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                            }`}
                         />
                       </div>
                       {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
@@ -548,10 +555,9 @@ const Courses = () => {
                           required
                           placeholder="50"
                           value={form.maxStudents}
-                          onChange={(e) => setForm(p => ({...p, maxStudents: e.target.value}))}
-                          className={`w-full rounded-lg border pl-9 p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${
-                            errors.maxStudents ? 'border-red-500 bg-red-50' : 'border-slate-200'
-                          }`}
+                          onChange={(e) => setForm(p => ({ ...p, maxStudents: e.target.value }))}
+                          className={`w-full rounded-lg border pl-9 p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${errors.maxStudents ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                            }`}
                         />
                       </div>
                       {errors.maxStudents && <p className="text-red-500 text-xs mt-1">{errors.maxStudents}</p>}
@@ -570,14 +576,13 @@ const Courses = () => {
                           required
                           placeholder="3"
                           value={form.duration.value}
-                          onChange={(e) => setForm(p => ({...p, duration: {...p.duration, value: e.target.value}}))}
-                          className={`w-20 rounded-lg border p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${
-                            errors.duration ? 'border-red-500 bg-red-50' : 'border-slate-200'
-                          }`}
+                          onChange={(e) => setForm(p => ({ ...p, duration: { ...p.duration, value: e.target.value } }))}
+                          className={`w-20 rounded-lg border p-3 text-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${errors.duration ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                            }`}
                         />
                         <select
                           value={form.duration.unit}
-                          onChange={(e) => setForm(p => ({...p, duration: {...p.duration, unit: e.target.value}}))}
+                          onChange={(e) => setForm(p => ({ ...p, duration: { ...p.duration, unit: e.target.value } }))}
                           className="flex-1 rounded-lg border p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                         >
                           <option value="days">Days</option>
@@ -597,7 +602,7 @@ const Courses = () => {
                         min="0"
                         placeholder="4"
                         value={form.projectsIncluded}
-                        onChange={(e) => setForm(p => ({...p, projectsIncluded: e.target.value}))}
+                        onChange={(e) => setForm(p => ({ ...p, projectsIncluded: e.target.value }))}
                         className="w-full rounded-lg border p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                       />
                     </div>
@@ -615,7 +620,7 @@ const Courses = () => {
                       <label className="block text-sm font-medium text-slate-700 mb-1">Level</label>
                       <select
                         value={form.level}
-                        onChange={(e) => setForm(p => ({...p, level: e.target.value}))}
+                        onChange={(e) => setForm(p => ({ ...p, level: e.target.value }))}
                         className="w-full rounded-lg border p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                       >
                         <option value="Beginner">Beginner</option>
@@ -629,7 +634,7 @@ const Courses = () => {
                       <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
                       <select
                         value={form.language}
-                        onChange={(e) => setForm(p => ({...p, language: e.target.value}))}
+                        onChange={(e) => setForm(p => ({ ...p, language: e.target.value }))}
                         className="w-full rounded-lg border p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                       >
                         <option value="English">English</option>
@@ -643,7 +648,7 @@ const Courses = () => {
                       <label className="block text-sm font-medium text-slate-700 mb-1">Mode</label>
                       <select
                         value={form.mode}
-                        onChange={(e) => setForm(p => ({...p, mode: e.target.value}))}
+                        onChange={(e) => setForm(p => ({ ...p, mode: e.target.value }))}
                         className="w-full rounded-lg border p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                       >
                         <option value="Online">Online</option>
@@ -657,7 +662,7 @@ const Courses = () => {
                         <input
                           type="checkbox"
                           checked={form.certificateProvided}
-                          onChange={(e) => setForm(p => ({...p, certificateProvided: e.target.checked}))}
+                          onChange={(e) => setForm(p => ({ ...p, certificateProvided: e.target.checked }))}
                           className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                         />
                         <span className="text-sm font-medium text-slate-700">Certificate Provided</span>
@@ -682,10 +687,9 @@ const Courses = () => {
                       rows={2}
                       maxLength={200}
                       value={form.shortDescription}
-                      onChange={(e) => setForm(p => ({...p, shortDescription: e.target.value}))}
-                      className={`w-full rounded-lg border p-3 text-sm outline-none resize-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${
-                        errors.shortDescription ? 'border-red-500 bg-red-50' : 'border-slate-200'
-                      }`}
+                      onChange={(e) => setForm(p => ({ ...p, shortDescription: e.target.value }))}
+                      className={`w-full rounded-lg border p-3 text-sm outline-none resize-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${errors.shortDescription ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                        }`}
                     />
                     <div className="flex justify-between mt-1">
                       {errors.shortDescription && <p className="text-red-500 text-xs">{errors.shortDescription}</p>}
@@ -702,10 +706,9 @@ const Courses = () => {
                       placeholder="Detailed course description, prerequisites, what students will learn..."
                       rows={4}
                       value={form.description}
-                      onChange={(e) => setForm(p => ({...p, description: e.target.value}))}
-                      className={`w-full rounded-lg border p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${
-                        errors.description ? 'border-red-500 bg-red-50' : 'border-slate-200'
-                      }`}
+                      onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
+                      className={`w-full rounded-lg border p-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${errors.description ? 'border-red-500 bg-red-50' : 'border-slate-200'
+                        }`}
                     />
                     {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
                   </div>
@@ -834,9 +837,8 @@ const Courses = () => {
                               value={module.title}
                               onClick={(e) => e.stopPropagation()}
                               onChange={(e) => updateModuleTitle(moduleIndex, e.target.value)}
-                              className={`flex-1 bg-transparent border-0 p-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-purple-500 rounded ${
-                                errors[`syllabus_${moduleIndex}`] ? 'text-red-600' : ''
-                              }`}
+                              className={`flex-1 bg-transparent border-0 p-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-purple-500 rounded ${errors[`syllabus_${moduleIndex}`] ? 'text-red-600' : ''
+                                }`}
                             />
                           </div>
                           <div className="flex items-center gap-1">

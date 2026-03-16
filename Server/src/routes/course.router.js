@@ -1,17 +1,14 @@
-import express from "express"
-import { isAuthenticated, isAdmin } from "../middlewares/auth.middlewares.js"
-import {
-     createCourse,
-     updateCourse,
-     deleteCourse,
-     getAllCourses,
-     getCourseById
- } from "../controllers/course.controller.js"
- const router = express.Router();
+import express from "express";
+import { createCourse, updateCourse, deleteCourse, getAllCourses, getCourseById } from "../controllers/course.controller.js";
+import { createCourseValidator } from "../validators/index.js";
+import validateRequest from "../middlewares/validateRequest.js";
 
-router.post("/createCourse", createCourse);
-router.put("/updateCourse/:courseId", updateCourse);
-router.delete("/deleteCourse/:courseId",  deleteCourse);
+const router = express.Router();
+
+// Use the proper middleware
+router.post("/createCourse", validateRequest(createCourseValidator), createCourse);
+router.put("/updateCourse/:courseId", validateRequest(createCourseValidator), updateCourse);
+router.delete("/deleteCourse/:courseId", deleteCourse);
 
 router.get("/getCourses", getAllCourses);
 router.get("/:courseId", getCourseById);
