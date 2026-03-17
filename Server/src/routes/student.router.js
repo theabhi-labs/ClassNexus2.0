@@ -28,19 +28,20 @@ const router = express.Router();
 router.post(
   "/add",
   isAuthenticated,
+  isAdmin,
   adminAddStudentValidator,
   validate,
   addStudent
 );
 
-router.get("/:userId/profile", getUserProfile);
+router.get("/:userId/profile", isAuthenticated, getUserProfile);
 
-router.put("/update-full/:studentId", updateStudentAndEnrollment);
+router.put("/update-full/:studentId",isAuthenticated, isAdmin, updateStudentAndEnrollment);
 
 router.put(
   "/update/:studentId",
-  // isAuthenticated,
-  // isAdmin,
+  isAuthenticated,
+  isAdmin,
   updateStudentValidator,
   validate,
   updateStudent
@@ -49,8 +50,8 @@ router.put(
 
 router.put(
   "/enrollment/:enrollmentId",
-  // isAuthenticated,
-  // isAdmin,
+  isAuthenticated,
+  isAdmin,
   updateEnrollmentValidator,
   validate,
   updateEnrollment
@@ -58,15 +59,15 @@ router.put(
 
 router.get(
   "/admin-overview",
-  // isAuthenticated,
-  // isAdmin,
+  isAuthenticated,
+  isAdmin,
   getAdminDashboardStudents
 );
 
 router.get(
   "/getAllStudents",
-  // isAuthenticated,
-  // isAdmin,
+  isAuthenticated,
+  isAdmin,
   getAllStudentsValidator,
   validate,
   getAllStudents
@@ -74,8 +75,8 @@ router.get(
 
 router.get(
   "/:studentId",
-  // isAuthenticated,
-  // isAdmin,
+  isAuthenticated,
+  isAdmin,
   getStudentDetailsValidator,
   validate,
   getStudentDetails
@@ -83,8 +84,8 @@ router.get(
 
 router.delete(
   "/:studentId",
-  // isAuthenticated,
-  // isAdmin,
+  isAuthenticated,
+  isAdmin,
   deleteStudentValidator,
   validate,
   deleteStudent
