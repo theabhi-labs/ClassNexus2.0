@@ -1,8 +1,7 @@
-import React,  { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Menu, X, LogOut, AlertCircle, User } from "lucide-react";
 import { scrollToSection } from "../utils/scrollRouter";
 import { registerUser, loginUser, getCurrentUser, logoutUser } from "../api/auth.api.js";
-import { getUserProfile } from "../api/student.api.js";
 import { useNavigate } from "react-router-dom";
 
 const navItems = [
@@ -54,7 +53,12 @@ const Navbar = () => {
   }, []);
 
   const handleNavClick = (section) => {
-    scrollToSection(section);
+    // Special handling for certificate section
+    if (section === "certificate") {
+      navigate("/certificate");
+    } else {
+      scrollToSection(section);
+    }
     setIsOpen(false);
   };
 
@@ -140,6 +144,7 @@ const handleSignupSubmit = async (e) => {
     } else {
       navigate(`/profile/${user?._id}`);
     }
+    setIsOpen(false); // Close mobile menu after click
   };
 
   const handleLogout = async () => {
@@ -269,20 +274,28 @@ const handleSignupSubmit = async (e) => {
         <div className="pt-6 border-t border-slate-100 space-y-4">
           {isLoggedIn ? (
             <>
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
+              {/* FIXED: Mobile profile button - now properly clickable */}
+              <button 
+                onClick={handleProfileClick}
+                className="flex items-center gap-3 w-full p-3 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black">
                   {user?.name?.charAt(0).toUpperCase()}
                 </div>
                 <span className="font-black text-slate-800">{user?.name}</span>
-              </div>
-              <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 font-black text-rose-500 bg-rose-50 rounded-2xl">
+              </button>
+              
+              <button 
+                onClick={handleLogout} 
+                className="flex items-center gap-3 w-full p-3 font-black text-rose-500 bg-rose-50 rounded-2xl hover:bg-rose-100 transition-colors"
+              >
                 <LogOut size={20} /> LOG OUT
               </button>
             </>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => { setIsLoginOpen(true); setIsOpen(false); }} className="py-4 border-2 border-slate-100 font-black rounded-2xl text-slate-600">LOGIN</button>
-              <button onClick={() => { setIsSignupOpen(true); setIsOpen(false); }} className="py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-100">JOIN NOW</button>
+              <button onClick={() => { setIsLoginOpen(true); setIsOpen(false); }} className="py-4 border-2 border-slate-100 font-black rounded-2xl text-slate-600 hover:bg-slate-50 transition-colors">LOGIN</button>
+              <button onClick={() => { setIsSignupOpen(true); setIsOpen(false); }} className="py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-colors">JOIN NOW</button>
             </div>
           )}
         </div>
