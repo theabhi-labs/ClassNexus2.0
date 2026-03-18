@@ -71,10 +71,8 @@ app.use("/api/v1/courses", coursesRouter);
 app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/pay", paymentRouter);
 app.use("/api/v1/upload", upload);
-app.use("/api/v1/certificate", certificate);
+app.use("/api/v1/certificates", certificate);
 
-// ✅ 404 handler for undefined routes
-// ✅ Yeh sahi hai - wildcard parameter ke saath
 app.use('/*splat', (req, res) => {
   res.status(404).json({ 
     success: false, 
@@ -83,7 +81,6 @@ app.use('/*splat', (req, res) => {
   });
 });
 
-// ✅ Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(err.status || 500).json({

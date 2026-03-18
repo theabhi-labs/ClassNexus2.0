@@ -2,7 +2,7 @@ import express from "express"
 import { userRegistrationValidator, userLoginValidators, validate } from "../validators/index.js"
 import { registerUser, loginUser, logoutUser, getMe, getAllUsers } from "../controllers/user.controller.js"
 
-import { isAuthenticated, isAdmin } from "../middlewares/auth.middlewares.js"
+import { isAuthenticated, isAdmin } from "../middlewares/auth.middleware.js"
 
 const router = express.Router();
 

@@ -1,6 +1,6 @@
 import express from "express";
 import { uploadImage, uploadPdf } from "../middlewares/upload.middleware.js";
-import { isAuthenticated } from "../middlewares/auth.middlewares.js";
+import { isAuthenticated } from "../middlewares/auth.middleware.js";
 import { 
   downloadStudentDocument, 
   uploadProfilePhoto,

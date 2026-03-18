@@ -5,9 +5,9 @@ import Student from "../models/student.model.js";
 import Enrollment from "../models/enrollment.model.js";
 import Payment from "../models/payment.model.js";
 import Course from "../models/course.model.js";
-import { issueCertificateIfEligible } from "./certificateIssue.js";
+import { issueCertificateIfEligible } from "./certificate.controller.js";  // ✅ ONLY THIS LINE CHANGED
 
- const enrollStudent = asyncHandler(async (req, res) => {
+const enrollStudent = asyncHandler(async (req, res) => {
   const { userId, courseId, joinType = "ADMIN" } = req.body;
 
   if (!userId || !courseId)
@@ -36,7 +36,7 @@ import { issueCertificateIfEligible } from "./certificateIssue.js";
     .json(new ApiResponse(201, enrollment, "Student enrolled successfully"));
 });
 
- const setupPayment = asyncHandler(async (req, res) => {
+const setupPayment = asyncHandler(async (req, res) => {
   const { enrollmentId, paymentType } = req.body;
 
   if (!enrollmentId || !paymentType)

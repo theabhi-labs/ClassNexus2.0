@@ -1,5 +1,5 @@
 import express from "express";
-import { isAuthenticated, isAdmin } from "../middlewares/auth.middlewares.js";
+import { isAuthenticated, isAdmin } from "../middlewares/auth.middleware.js";
 import {
   addStudent,
   updateStudent,
