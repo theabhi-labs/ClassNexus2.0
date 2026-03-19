@@ -52,15 +52,6 @@ const enrollmentSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    certificate: {
-      issued: { type: Boolean, default: false },
-      certificateId: {
-        type: String,
-        unique: true,
-        sparse: true,
-      },
-      issuedAt: Date,
-    },
 
     enrolledAt: {
       type: Date,
@@ -72,39 +63,6 @@ const enrollmentSchema = new mongoose.Schema(
 
 enrollmentSchema.index({ student: 1, course: 1 }, { unique: true });
 
-enrollmentSchema.pre("save", async function () {
-
-  if (!this.enrollmentNo) {
-    this.enrollmentNo =
-      "ENR-" +
-      new Date().getFullYear() +
-      "-" +
-      crypto.randomBytes(3).toString("hex").toUpperCase();
-  }
-
-  if (this.isModified("status") && this.status === "COMPLETED") {
-
-    if (!this.certificate) {
-      this.certificate = {};
-    }
-
-    if (!this.certificate.issued) {
-
-      this.certificate.issued = true;
-
-      this.certificate.certificateId =
-        "CERT-" +
-        new Date().getFullYear() +
-        "-" +
-        crypto.randomBytes(4).toString("hex").toUpperCase();
-
-      this.certificate.issuedAt = new Date();
-
-    }
-
-  }
-
-});
 
 const Enrollment = mongoose.model("Enrollment", enrollmentSchema);
 

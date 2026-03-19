@@ -7,11 +7,19 @@ import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
 
 
+const checkExistingCertificate = async (enrollmentId) => {
+  return await Certificate.findOne({ enrollment: enrollmentId });
+};
+
 export const issueCertificateIfEligible = async (enrollment) => {
   try {
-    // Check if already issued
-    if (enrollment.certificate?.issued) {
-      return await Certificate.findOne({ enrollment: enrollment._id });
+    // ✅ Check in Certificate model directly, not in enrollment.certificate
+    const existingCert = await Certificate.findOne({ 
+      enrollment: enrollment._id 
+    });
+    
+    if (existingCert) {
+      return existingCert;
     }
 
     // Check eligibility
@@ -31,7 +39,7 @@ export const issueCertificateIfEligible = async (enrollment) => {
     // Generate QR Code
     const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl);
 
-    // Create Certificate
+    // ✅ Create Certificate ONLY in Certificate model
     const certificate = await Certificate.create({
       certificateId,
       enrollment: enrollment._id,
@@ -39,7 +47,7 @@ export const issueCertificateIfEligible = async (enrollment) => {
       enrollmentNumber: enrollment.enrollmentNo,
       course: {
         id: enrollment.course._id,
-        name: enrollment.course.title,
+        name: enrollment.course.title || enrollment.course.name,
         duration: enrollment.course.duration
       },
       studentDetails: {
@@ -60,141 +68,51 @@ export const issueCertificateIfEligible = async (enrollment) => {
     console.error("Error in issueCertificateIfEligible:", error);
     throw error;
   }
-};
+}
 
 
+// SIMPLE VERSION - Sirf required fields ke saath
 export const issueCertificate = async (req, res) => {
   try {
     const { enrollmentId } = req.params;
 
-    // Find enrollment with all details
-    const enrollment = await Enrollment.findById(enrollmentId)
-      .populate({
-        path: "student",
-        populate: {
-          path: "user",
-          select: "name email profilePhoto"
-        }
-      })
-      .populate("course");
-
+    const enrollment = await Enrollment.findById(enrollmentId);
     if (!enrollment) {
-      return res.status(404).json({
-        success: false,
-        message: "Enrollment not found"
-      });
+      return res.status(404).json({ message: "Enrollment not found" });
     }
 
-    // Check eligibility (status COMPLETED)
-    if (enrollment.status !== "COMPLETED") {
-      return res.status(400).json({
-        success: false,
-        message: "Certificate can only be issued for COMPLETED courses"
-      });
-    }
-
-    // Check if certificate already issued
-    if (enrollment.certificate?.issued) {
-      const existingCert = await Certificate.findOne({
-        certificateId: enrollment.certificate.certificateId
-      });
-
-      if (existingCert) {
-        return res.json({
-          success: true,
-          message: "Certificate already issued",
-          data: {
-            certificateId: existingCert.certificateId,
-            issueDate: existingCert.issueDate,
-            studentName: existingCert.studentDetails.name,
-            courseName: existingCert.course.name,
-            enrollmentNumber: existingCert.enrollmentNumber
-          }
-        });
-      }
-    }
-
-    // Generate Certificate ID
-    const certificateId = "CERT-" + 
-      new Date().getFullYear() + "-" + 
-      uuidv4().slice(0, 8).toUpperCase();
-
-    // Generate Verification URL
-    const baseUrl = process.env.BASE_URL || "http://localhost:5000";
-    const verificationUrl = `${baseUrl}/api/verify/${certificateId}`;
-
-    // Generate QR Code
-    const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl);
-
-    // Get user profile photo
-    const userPhoto = enrollment.student?.user?.profilePhoto || "";
-
-    // Create Certificate in Database
+    // Sirf 5 fields - minimum required
     const certificate = await Certificate.create({
-      certificateId,
+      certificateId: "CERT-" + Date.now(),
       enrollment: enrollment._id,
-      student: enrollment.student._id,
+      student: enrollment.student,
       enrollmentNumber: enrollment.enrollmentNo,
       course: {
-        id: enrollment.course._id,
-        name: enrollment.course.title,
-        duration: {
-          value: enrollment.course.duration.value,
-          unit: enrollment.course.duration.unit
-        },
-        level: enrollment.course.level,
-        mode: enrollment.course.mode
+        name: "Course Name"  // temporary
       },
       studentDetails: {
-        name: enrollment.student?.user?.name || "Student",
-        profilePhoto: userPhoto,
-        dob: enrollment.student?.dob,
-        mobileNum: enrollment.student?.mobileNum
+        name: "Student Name"  // temporary
       },
       issueDate: new Date(),
       issuedBy: {
-        name: process.env.ISSUED_BY_NAME || "Admin",
-        designation: process.env.ISSUED_BY_DESIGNATION || "Director"
+        name: "Admin",
+        designation: "Director"
       },
       issuingOrganization: {
-        name: process.env.ORG_NAME || "Your Organization"
+        name: "Organization"
       },
-      qrCode: {
-        imageUrl: qrCodeDataUrl,
-        data: verificationUrl
-      },
-      verificationUrl,
-      isValid: true
+      verificationUrl: "http://localhost:5000/verify/temp"
     });
 
-    // Update Enrollment with certificate info
-    enrollment.certificate = {
-      issued: true,
-      certificateId: certificateId,
-      issuedAt: new Date()
-    };
-    await enrollment.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Certificate issued successfully",
-      data: {
-        certificateId: certificate.certificateId,
-        issueDate: certificate.issueDate,
-        studentName: certificate.studentDetails.name,
-        studentPhoto: certificate.studentDetails.profilePhoto,
-        courseName: certificate.course.name,
-        enrollmentNumber: certificate.enrollmentNumber,
-        verificationUrl: certificate.verificationUrl
-      }
-    });
+    res.json({ success: true, data: certificate });
 
   } catch (error) {
-    console.error("Issue certificate error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to issue certificate",
-      error: error.message
+    console.error("Error:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      // Agar validation error ho to batayega kaunsa field missing hai
+      errors: error.errors 
     });
   }
 };
