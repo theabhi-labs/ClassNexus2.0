@@ -94,39 +94,18 @@ const AdminLayout = () => {
         {/* Dynamic Content Area */}
         <main className="flex-1 p-5 lg:p-10">
           <div className="mx-auto max-w-[1400px]">
-            
-            {/* Dynamic Page Header */}
-            <header className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="flex items-center gap-2 mb-3">
-                   <div className="h-1 w-1 rounded-full bg-[#4F46E5]" />
-                   <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#4F46E5]/80">System Management</span>
-                </div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight sm:text-4xl">
-                  {getPageTitle()}
-                </h1>
-                <p className="text-sm text-slate-500 font-medium mt-2 max-w-2xl">
-                  Welcome back, Arjun. Monitoring your academy performance and architectural data logs.
-                </p>
-            </header>
 
-            {/* Main Content (Outlet) */}
             <div className="animate-in fade-in zoom-in-[0.98] duration-700 delay-150">
               <Outlet />
             </div>
           </div>
         </main>
 
-        {/* Minimalist Industrial Footer */}
         <footer className="px-6 lg:px-10 py-8 flex flex-col sm:flex-row items-center justify-between border-t border-slate-200/60 gap-4">
           <div className="flex items-center gap-4">
             <p className="text-[10px] text-slate-400 font-black tracking-[0.15em] uppercase">
-              &copy; 2026 EDUADMIN • Core v3.4.0
+              &copy; 2026 JAS COMPUTER •  v1.0.0
             </p>
-          </div>
-          <div className="flex gap-8">
-             <a href="#" className="text-[10px] text-slate-400 font-bold hover:text-[#4F46E5] uppercase tracking-widest transition-colors">Documentation</a>
-             <a href="#" className="text-[10px] text-slate-400 font-bold hover:text-[#4F46E5] uppercase tracking-widest transition-colors">API Status</a>
-             <a href="#" className="text-[10px] text-slate-400 font-bold hover:text-[#4F46E5] uppercase tracking-widest transition-colors">Support</a>
           </div>
         </footer>
       </div>

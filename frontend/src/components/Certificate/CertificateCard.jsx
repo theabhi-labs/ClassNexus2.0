@@ -1,441 +1,374 @@
 // components/Certificate/CertificateCard.jsx
-import React, { useRef } from 'react';
-import { Download, Copy, Fingerprint, Printer } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Copy, Printer, ShieldCheck, Award, Fingerprint, CheckCircle, Download, ExternalLink, Loader2, Calendar, User, BookOpen, Hash } from 'lucide-react';
+import toast from 'react-hot-toast';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
-const CertificateCard = ({ certificateData }) => {
+const CertificateCard = ({ certificateData, onClose, onDownload }) => {
   const certificateRef = useRef(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(certificateData.id);
-    alert('Certificate ID copied to clipboard!');
+  // Format date from backend
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not specified';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return dateString;
+    }
   };
 
+  // Get grade from backend data
+  const getGrade = () => {
+    // If grade exists in backend, use it, else calculate based on performance
+    if (certificateData.grade) return certificateData.grade;
+    return 'A+'; // Default
+  };
+
+  // Get duration from backend
+  const getDuration = () => {
+    if (certificateData.duration) {
+      return `${certificateData.duration.value} ${certificateData.duration.unit}`;
+    }
+    return '3 months';
+  };
+
+  // Copy certificate ID to clipboard
+  const copyToClipboard = async () => {
+    const certId = certificateData.certificateId || certificateData.id;
+    try {
+      await navigator.clipboard.writeText(certId);
+      setIsCopied(true);
+      toast.success('Certificate ID copied to clipboard!');
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (error) {
+      toast.error('Failed to copy');
+    }
+  };
+
+  // Generate PDF using html2canvas
+  const generatePDF = async () => {
+    if (!certificateRef.current) return;
+    
+    setIsDownloading(true);
+    try {
+      const element = certificateRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgWidth = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`certificate_${certificateData.certificateId || certificateData.id}.pdf`);
+      
+      toast.success('Certificate downloaded successfully!');
+      if (onDownload) onDownload();
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Print certificate
   const printCertificate = () => {
     const printWindow = window.open('', '_blank');
-    
     if (!printWindow) {
-      alert('Please allow pop-ups to print certificate');
+      toast.error('Please allow pop-ups to print');
       return;
     }
 
-    const certificateHTML = `
+    const printContent = certificateRef.current.cloneNode(true);
+    
+    const printHTML = `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Certificate - ${certificateData.studentName}</title>
+          <title>Certificate - ${certificateData.studentName || certificateData.studentDetails?.name}</title>
+          <meta charset="UTF-8">
           <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-              font-family: Arial, sans-serif;
+              margin: 0;
+              padding: 20px;
+              background: #fff;
               display: flex;
               justify-content: center;
               align-items: center;
               min-height: 100vh;
-              background: #f0f0f0;
-              padding: 20px;
-            }
-            .certificate-wrapper {
-              width: 1100px;
-              background: white;
-              padding: 40px;
-              border: 15px solid #1e3a8a;
-              position: relative;
-              box-shadow: 0 0 30px rgba(0,0,0,0.2);
-            }
-            .header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #1e3a8a;
-              padding-bottom: 20px;
-            }
-            .logo-section {
-              text-align: center;
-            }
-            .logo {
-              width: 80px;
-              height: 80px;
-              background: #1e3a8a;
-              color: white;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 24px;
-              font-weight: bold;
-              border-radius: 20px;
-              margin-bottom: 5px;
-            }
-            .certified-badge {
-              font-size: 12px;
-              color: #1e3a8a;
-              border: 1px solid #1e3a8a;
-              padding: 3px 8px;
-              border-radius: 4px;
-            }
-            .center-info {
-              text-align: right;
-            }
-            .center-name {
-              font-size: 22px;
-              color: #1e3a8a;
-              font-weight: bold;
-            }
-            .center-tagline {
-              font-size: 14px;
-              color: #666;
-              font-style: italic;
-            }
-            .center-address {
-              font-size: 12px;
-              color: #888;
-            }
-            .title-section {
-              text-align: center;
-              margin: 30px 0;
-            }
-            .title {
-              font-size: 36px;
-              color: #1e3a8a;
-              font-weight: bold;
-              border-bottom: 3px solid #1e3a8a;
-              display: inline-block;
-              padding-bottom: 10px;
-            }
-            .subtitle {
-              font-size: 18px;
-              color: #666;
-              margin-top: 15px;
-            }
-            .student-section {
-              text-align: center;
-              margin: 30px 0;
-            }
-            .student-name {
-              font-size: 42px;
-              color: #1e3a8a;
-              font-weight: bold;
-              border-bottom: 2px dashed #1e3a8a;
-              display: inline-block;
-              padding-bottom: 5px;
-            }
-            .enrollment {
-              font-size: 16px;
-              color: #666;
-              margin-top: 10px;
-            }
-            .completion-section {
-              text-align: center;
-              margin: 30px 0;
-            }
-            .completion-text {
-              font-size: 18px;
-              color: #333;
-              margin: 5px 0;
-            }
-            .course-name {
-              font-size: 28px;
-              color: white;
-              background: #1e3a8a;
-              padding: 10px 30px;
-              display: inline-block;
-              border-radius: 5px;
-              margin: 10px 0;
-            }
-            .duration {
-              font-size: 16px;
-              color: #666;
-            }
-            .coverage-section {
-              margin: 30px 0;
-            }
-            .section-title {
-              font-size: 18px;
-              color: #1e3a8a;
-              font-weight: bold;
-              border-bottom: 1px solid #ddd;
-              padding-bottom: 5px;
-              margin-bottom: 10px;
-            }
-            .coverage-grid {
-              display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 10px;
-              padding-left: 20px;
-            }
-            .coverage-item {
-              font-size: 14px;
-              color: #444;
-            }
-            .performance-section {
-              margin: 30px 0;
-            }
-            .performance-grid {
-              display: flex;
-              justify-content: space-between;
-              padding-left: 20px;
-            }
-            .performance-item {
-              font-size: 15px;
-            }
-            .performance-label {
-              font-weight: bold;
-              color: #1e3a8a;
-            }
-            .certificate-id {
-              text-align: right;
-              font-size: 14px;
-              color: #666;
-              border-top: 1px solid #ddd;
-              padding-top: 10px;
-              margin: 30px 0;
-            }
-            .signatures {
-              display: flex;
-              justify-content: space-between;
-              margin: 50px 0 20px;
-            }
-            .signature {
-              width: 200px;
-              text-align: center;
-            }
-            .signature-line {
-              width: 100%;
-              height: 1px;
-              background: #333;
-              margin-bottom: 10px;
-            }
-            .signature-title {
-              font-size: 14px;
-              color: #333;
-            }
-            .footer {
-              text-align: center;
-              font-size: 11px;
-              color: #999;
-              border-top: 1px dashed #ddd;
-              padding-top: 10px;
+              font-family: 'Times New Roman', serif;
             }
             @media print {
-              body { background: white; padding: 0; }
-              .certificate-wrapper { border: 15px solid #1e3a8a; box-shadow: none; }
+              body { padding: 0; margin: 0; }
+              .no-print { display: none !important; }
             }
+            .certificate-preview {
+              max-width: 1100px;
+              margin: 0 auto;
+              box-shadow: none;
+            }
+            /* Certificate Styles */
+            .cert-container {
+              background: white;
+              padding: 40px;
+              border: 20px double #c5a059;
+              position: relative;
+            }
+            .cert-header { text-align: center; margin-bottom: 30px; }
+            .cert-title { font-size: 48px; color: #c5a059; font-weight: bold; margin: 20px 0; }
+            .student-name { font-size: 36px; color: #1e3a8a; margin: 30px 0; border-bottom: 2px solid #c5a059; display: inline-block; }
+            .course-name { font-size: 24px; font-weight: bold; margin: 20px 0; }
+            .details-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 30px 0; text-align: center; }
+            .signatures { display: flex; justify-content: space-between; margin-top: 50px; }
           </style>
         </head>
         <body>
-          <div class="certificate-wrapper">
-            <!-- Header -->
-            <div class="header">
-              <div class="logo-section">
-                <div class="logo">GNDU</div>
-                <div class="certified-badge">ISO 9001:2015 Certified</div>
-              </div>
-              <div class="center-info">
-                <div class="center-name">Guru Nanak Dev University</div>
-                <div class="center-tagline">(Empowering Skills for the Digital Future)</div>
-                <div class="center-address">Amritsar, Punjab | Contact: +91 1234567890 | www.gndu.ac.in</div>
-              </div>
-            </div>
-
-            <!-- Title -->
-            <div class="title-section">
-              <div class="title">CERTIFICATE OF COMPLETION</div>
-              <div class="subtitle">This is to proudly certify that</div>
-            </div>
-
-            <!-- Student -->
-            <div class="student-section">
-              <div class="student-name">${certificateData.studentName}</div>
-              <div class="enrollment">Enrollment No: [${certificateData.studentId}]</div>
-            </div>
-
-            <!-- Completion -->
-            <div class="completion-section">
-              <div class="completion-text">has successfully completed the course</div>
-              <div class="course-name">${certificateData.course}</div>
-              <div class="duration">conducted at [Guru Nanak Dev University] from [01 Jan 2024] to [31 Dec 2024].</div>
-            </div>
-
-            <!-- Course Coverage -->
-            <div class="coverage-section">
-              <div class="section-title">Course Coverage:</div>
-              <div class="coverage-grid">
-                <div class="coverage-item">• Computer Fundamentals</div>
-                <div class="coverage-item">• MS Word, Excel & PowerPoint</div>
-                <div class="coverage-item">• Internet & Email Management</div>
-                <div class="coverage-item">• Typing & Documentation</div>
-                <div class="coverage-item">• Practical Assignments</div>
-                <div class="coverage-item">• Final Project</div>
-              </div>
-            </div>
-
-            <!-- Performance -->
-            <div class="performance-section">
-              <div class="section-title">Performance Record:</div>
-              <div class="performance-grid">
-                <div class="performance-item">
-                  <span class="performance-label">Attendance:</span> 95%
-                </div>
-                <div class="performance-item">
-                  <span class="performance-label">Grade:</span> ${certificateData.grade}
-                </div>
-                <div class="performance-item">
-                  <span class="performance-label">Project Status:</span> Successfully Completed
-                </div>
-              </div>
-            </div>
-
-            <!-- Certificate ID -->
-            <div class="certificate-id">
-              Certificate ID: ${certificateData.id}
-            </div>
-
-            <!-- Signatures -->
-            <div class="signatures">
-              <div class="signature">
-                <div class="signature-line"></div>
-                <div class="signature-title">Course Instructor</div>
-              </div>
-              <div class="signature">
-                <div class="signature-line"></div>
-                <div class="signature-title">Director (Authorized Signatory)</div>
-              </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="footer">
-              This certificate is digitally generated and does not require a physical signature
-            </div>
+          <div class="certificate-preview">
+            ${printContent.outerHTML}
           </div>
-
           <script>
-            window.onload = function() {
-              window.print();
-            }
-          </script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                setTimeout(() => window.close(), 500);
+              }, 500);
+            };
+          <\/script>
         </body>
       </html>
     `;
 
-    printWindow.document.write(certificateHTML);
+    printWindow.document.write(printHTML);
     printWindow.document.close();
   };
 
+  // Get data from backend structure
+  const studentName = certificateData.studentName || certificateData.studentDetails?.name || 'Student';
+  const courseName = certificateData.course || certificateData.course?.name || 'Course';
+  const certificateId = certificateData.certificateId || certificateData.id;
+  const enrollmentNumber = certificateData.enrollmentNumber || certificateData.studentId;
+  const issueDate = certificateData.issueDate;
+  const grade = certificateData.grade || 'A+';
+  const verificationUrl = certificateData.verificationUrl;
+  const issuedBy = certificateData.issuedBy?.name || 'Admin';
+  const organization = certificateData.issuingOrganization?.name || 'JAS COMPUTER';
+  const level = certificateData.level || certificateData.course?.level;
+  const mode = certificateData.mode || certificateData.course?.mode;
+
   return (
-    <div className="space-y-6">
-      {/* Certificate Display */}
-      <div ref={certificateRef} className="bg-[#0f172a] rounded-[3rem] p-1 shadow-2xl shadow-indigo-200">
-        <div className="bg-[#0a0f1c] rounded-[2.8rem] p-12 text-white border border-[#1e293b]">
+    <div className="max-w-4xl mx-auto p-4 animate-in slide-in-from-right-8 duration-500">
+      {/* Certificate Preview Card */}
+      <div 
+        ref={certificateRef}
+        className="bg-gradient-to-br from-white to-slate-50 border-8 border-double border-amber-200 shadow-2xl rounded-lg overflow-hidden relative group"
+      >
+        {/* Decorative Background Elements */}
+        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+          <Award size={150} className="text-amber-700" />
+        </div>
+        <div className="absolute bottom-0 left-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+          <ShieldCheck size={150} className="text-amber-700" />
+        </div>
+        
+        {/* Main Content */}
+        <div className="relative z-10 text-center p-8 md:p-12">
+          {/* Institute Logo/Badge */}
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-600 to-amber-700 rounded-full flex items-center justify-center shadow-xl">
+              <span className="text-white font-bold text-2xl">JC</span>
+            </div>
+          </div>
           
-          {/* Header */}
-          <div className="flex justify-between items-start mb-16">
-            <div>
-              <div className="inline-block px-3 py-1 bg-indigo-500/20 rounded-full border border-indigo-500/30 mb-4">
-                <span className="text-[10px] font-black uppercase text-indigo-400">
-                  ISO 9001:2015 Certified
+          {/* Institute Name */}
+          <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-800 mb-1 tracking-wide">
+            {organization}
+          </h1>
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-6">
+            Blockchain Verified Certificate
+          </p>
+          
+          {/* Certificate Title */}
+          <div className="mb-6">
+            <h2 className="text-5xl md:text-7xl font-serif font-bold text-amber-700 mb-2 tracking-wider">
+              CERTIFICATE
+            </h2>
+            <p className="text-sm text-slate-500 uppercase tracking-[0.3em]">
+              OF ACHIEVEMENT
+            </p>
+          </div>
+          
+          {/* Description */}
+          <p className="text-sm text-slate-500 uppercase tracking-wider mb-4">
+            This is to certify that
+          </p>
+          
+          {/* Student Name */}
+          <h3 className="text-3xl md:text-5xl font-serif font-bold text-amber-700 my-4 border-b-2 border-amber-200 inline-block px-8">
+            {studentName}
+          </h3>
+          
+          {/* Course Details */}
+          <p className="text-slate-600 max-w-2xl mx-auto mt-6 leading-relaxed">
+            Has successfully completed the professional course in
+          </p>
+          <p className="text-xl md:text-2xl font-bold text-slate-800 mt-2 mb-4">
+            {courseName}
+          </p>
+          
+          {/* Additional Details from Backend */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mt-8 mb-8">
+            <div className="text-center">
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Grade</p>
+              <p className={`text-xl font-bold text-emerald-600`}>
+                {grade}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Issue Date</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {formatDate(issueDate)}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Enrollment No</p>
+              <p className="text-sm font-mono text-slate-600">
+                {enrollmentNumber || 'N/A'}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Duration</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {getDuration()}
+              </p>
+            </div>
+          </div>
+          
+          {/* Additional Info if available */}
+          {(level || mode) && (
+            <div className="flex justify-center gap-4 mb-6">
+              {level && (
+                <span className="px-3 py-1 bg-slate-100 rounded-full text-xs text-slate-600">
+                  Level: {level}
                 </span>
-              </div>
-              <h2 className="text-3xl font-black">CERTIFICATE OF COMPLETION</h2>
+              )}
+              {mode && (
+                <span className="px-3 py-1 bg-slate-100 rounded-full text-xs text-slate-600">
+                  Mode: {mode}
+                </span>
+              )}
             </div>
-          </div>
-
-          {/* Student Details */}
-          <div className="text-center mb-12">
-            <p className="text-gray-400 text-sm mb-2">This is to proudly certify that</p>
-            <p className="text-5xl font-black text-indigo-400 mb-2">
-              {certificateData.studentName}
-            </p>
-            <p className="text-gray-500">Enrollment No: [{certificateData.studentId}]</p>
+          )}
+          
+          {/* Signature Section */}
+          <div className="flex justify-between items-end mt-8 pt-8 border-t border-amber-200">
+            <div className="text-center">
+              <div className="w-32 h-px bg-slate-300 mb-2"></div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">Course Instructor</p>
+              <p className="text-sm font-semibold text-slate-700 mt-1">{issuedBy}</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="flex justify-center mb-2">
+                <Fingerprint className="text-amber-500" size={24} />
+              </div>
+              <p className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded">
+                ID: {certificateId?.substring(0, 16)}...
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-32 h-px bg-slate-300 mb-2"></div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">Director</p>
+              <p className="text-sm font-semibold text-slate-700 mt-1">{organization}</p>
+            </div>
           </div>
           
-          <div className="text-center mb-12">
-            <p className="text-gray-400 mb-2">has successfully completed the course</p>
-            <p className="text-3xl font-bold bg-indigo-600/30 inline-block px-8 py-3 rounded-full">
-              {certificateData.course}
-            </p>
-            <p className="text-gray-500 mt-4">
-              conducted at [Guru Nanak Dev University] from [01 Jan 2024] to [31 Dec 2024].
-            </p>
-          </div>
-
-          {/* Course Coverage */}
-          <div className="mb-8 p-6 bg-white/5 rounded-3xl">
-            <p className="text-gray-400 text-xs font-black uppercase mb-3">Course Coverage</p>
-            <div className="grid grid-cols-2 gap-2 text-sm text-gray-300">
-              <span>• Computer Fundamentals</span>
-              <span>• MS Word, Excel & PowerPoint</span>
-              <span>• Internet & Email Management</span>
-              <span>• Typing & Documentation</span>
-              <span>• Practical Assignments</span>
-              <span>• Final Project</span>
-            </div>
-          </div>
-
-          {/* Performance */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="text-center p-4 bg-white/5 rounded-2xl">
-              <p className="text-gray-400 text-[10px] font-black uppercase">Attendance</p>
-              <p className="text-2xl font-bold text-indigo-400">95%</p>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-2xl">
-              <p className="text-gray-400 text-[10px] font-black uppercase">Grade</p>
-              <p className="text-2xl font-bold text-indigo-400">{certificateData.grade}</p>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-2xl">
-              <p className="text-gray-400 text-[10px] font-black uppercase">Project</p>
-              <p className="text-sm font-bold text-green-400">Completed</p>
-            </div>
-          </div>
-
-          {/* Certificate ID */}
-          <div className="flex items-center justify-between mt-8 pt-4 border-t border-white/5">
-            <div className="flex items-center space-x-2">
-              <Fingerprint size={16} className="text-indigo-400" />
-              <span className="text-xs font-mono text-indigo-400">{certificateData.id}</span>
-            </div>
-            <span className="text-xs text-gray-500">Issued: 17 March 2024</span>
-          </div>
-
-          {/* Signatures */}
-          <div className="flex justify-between mt-12">
-            <div className="text-center">
-              <div className="w-40 h-0.5 bg-gray-600 mb-2"></div>
-              <p className="text-gray-400 text-xs">Course Instructor</p>
-            </div>
-            <div className="text-center">
-              <div className="w-40 h-0.5 bg-gray-600 mb-2"></div>
-              <p className="text-gray-400 text-xs">Director</p>
+          {/* Blockchain Verification Badge */}
+          <div className="mt-6 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+              <ShieldCheck size={12} />
+              <span>Blockchain Verified Certificate</span>
+              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+              <span>Digitally Signed</span>
+              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+              <span>Tamper-Proof</span>
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Buttons */}
-      <div className="flex items-center justify-center space-x-4">
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
+        {/* Download PDF Button */}
         <button
-          onClick={printCertificate}
-          className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl transition-colors"
+          onClick={generatePDF}
+          disabled={isDownloading}
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 md:px-8 py-3 rounded-full hover:from-amber-700 hover:to-amber-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Printer size={18} />
-          <span className="text-sm font-bold">Print / Save PDF</span>
+          {isDownloading ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : (
+            <Download size={20} />
+          )}
+          <span className="font-semibold uppercase text-sm tracking-wider">
+            {isDownloading ? 'Generating...' : 'Download PDF'}
+          </span>
         </button>
         
-        <button 
-          onClick={copyToClipboard}
-          className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl transition-colors"
+        {/* Print Button */}
+        <button
+          onClick={printCertificate}
+          className="flex items-center justify-center gap-2 bg-slate-800 text-white px-6 md:px-8 py-3 rounded-full hover:bg-slate-900 transition-all shadow-lg"
         >
-          <Copy size={18} />
-          <span className="text-sm font-bold">Copy ID</span>
+          <Printer size={20} />
+          <span className="font-semibold uppercase text-sm tracking-wider">Print</span>
+        </button>
+        
+        {/* Copy ID Button */}
+        <button
+          onClick={copyToClipboard}
+          className="flex items-center justify-center gap-2 border-2 border-amber-200 text-amber-700 px-6 md:px-8 py-3 rounded-full hover:bg-amber-50 transition-all"
+        >
+          {isCopied ? <CheckCircle size={18} /> : <Copy size={18} />}
+          <span className="font-medium text-sm">
+            {isCopied ? 'Copied!' : 'Copy Certificate ID'}
+          </span>
         </button>
       </div>
-
-      <p className="text-xs text-center text-gray-500">
-        Click "Print / Save PDF" then select "Save as PDF" from printer options
-      </p>
+      
+      {/* Verification Link */}
+      {verificationUrl && (
+        <div className="mt-6 text-center">
+          <a
+            href={verificationUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-xs text-amber-600 hover:text-amber-700 transition-colors"
+          >
+            <ExternalLink size={12} />
+            Verify Certificate Online
+          </a>
+        </div>
+      )}
     </div>
   );
 };

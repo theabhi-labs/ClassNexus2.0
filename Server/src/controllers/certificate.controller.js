@@ -71,48 +71,135 @@ export const issueCertificateIfEligible = async (enrollment) => {
 }
 
 
-// SIMPLE VERSION - Sirf required fields ke saath
 export const issueCertificate = async (req, res) => {
   try {
     const { enrollmentId } = req.params;
 
-    const enrollment = await Enrollment.findById(enrollmentId);
+    const enrollment = await Enrollment.findById(enrollmentId)
+      .populate({
+        path: "student",
+        populate: {
+          path: "user",
+          select: "name email profilePhoto"
+        }
+      })
+      .populate("course");
+
     if (!enrollment) {
-      return res.status(404).json({ message: "Enrollment not found" });
+      return res.status(404).json({ success: false, message: "Enrollment not found" });
     }
 
-    // Sirf 5 fields - minimum required
-    const certificate = await Certificate.create({
-      certificateId: "CERT-" + Date.now(),
-      enrollment: enrollment._id,
-      student: enrollment.student,
-      enrollmentNumber: enrollment.enrollmentNo,
-      course: {
-        name: "Course Name"  // temporary
-      },
-      studentDetails: {
-        name: "Student Name"  // temporary
-      },
-      issueDate: new Date(),
-      issuedBy: {
-        name: "Admin",
-        designation: "Director"
-      },
-      issuingOrganization: {
-        name: "Organization"
-      },
-      verificationUrl: "http://localhost:5000/verify/temp"
-    });
+    // 🔍 DEBUGGING - Check all required data
+    console.log("========== DEBUG INFO ==========");
+    console.log("1. Enrollment ID:", enrollment._id);
+    console.log("2. Student ID:", enrollment.student?._id);
+    console.log("3. Student User:", enrollment.student?.user?._id);
+    console.log("4. Course ID:", enrollment.course?._id);
+    console.log("5. Course Title:", enrollment.course?.title);
+    console.log("6. Course Duration:", enrollment.course?.duration);
+    console.log("7. Student Name:", enrollment.student?.user?.name);
+    console.log("8. Student DOB:", enrollment.student?.dob);
+    console.log("9. Student Mobile:", enrollment.student?.mobileNum);
+    console.log("================================");
 
-    res.json({ success: true, data: certificate });
+    // Agar course duration undefined hai to fix karo
+    let courseDuration = enrollment.course?.duration;
+    if (!courseDuration || !courseDuration.value) {
+      courseDuration = { value: 6, unit: "months" };
+      console.log("⚠️ Course duration missing, using default");
+    }
+
+    // Agar student details missing hain to fix karo
+    let studentName = enrollment.student?.user?.name;
+    if (!studentName) {
+      studentName = "Student";
+      console.log("⚠️ Student name missing, using default");
+    }
+
+    // Check if certificate already exists
+    const existingCert = await Certificate.findOne({ enrollment: enrollmentId });
+    if (existingCert) {
+      return res.json({ success: true, message: "Certificate already exists" });
+    }
+
+    // Generate data
+    const certificateId = "CERT-" + new Date().getFullYear() + "-" + 
+                          uuidv4().slice(0, 8).toUpperCase();
+    
+    const baseUrl = process.env.BASE_URL || "http://localhost:5000";
+    const verificationUrl = `${baseUrl}/api/verify/${certificateId}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl);
+
+    // ✅ TRY TO CREATE CERTIFICATE
+    try {
+      const certificate = await Certificate.create({
+        certificateId,
+        enrollment: enrollment._id,
+        student: enrollment.student._id,
+        enrollmentNumber: enrollment.enrollmentNo,
+        course: {
+          id: enrollment.course._id,
+          name: enrollment.course.title || "Course",
+          duration: courseDuration,
+          level: enrollment.course.level || "Beginner",
+          mode: enrollment.course.mode || "Online"
+        },
+        studentDetails: {
+          name: studentName,
+          profilePhoto: enrollment.student?.user?.profilePhoto || "",
+          dob: enrollment.student?.dob || null,
+          mobileNum: enrollment.student?.mobileNum || ""
+        },
+        issueDate: new Date(),
+        issuedBy: {
+          name: process.env.ISSUED_BY_NAME || "Admin",
+          designation: process.env.ISSUED_BY_DESIGNATION || "Director"
+        },
+        issuingOrganization: {
+          name: process.env.ORG_NAME || "Your Organization"
+        },
+        qrCode: {
+          imageUrl: qrCodeDataUrl,
+          data: verificationUrl
+        },
+        verificationUrl,
+        isValid: true
+      });
+
+      console.log("✅ Certificate created successfully!");
+      
+      return res.status(201).json({
+        success: true,
+        message: "Certificate issued successfully",
+        data: certificate
+      });
+
+    } catch (createError) {
+      // 🔥 Agar create fail ho to exact error batao
+      console.error("❌ Certificate creation failed:", createError);
+      
+      // Mongoose validation error
+      if (createError.name === "ValidationError") {
+        const errors = {};
+        for (let field in createError.errors) {
+          errors[field] = createError.errors[field].message;
+        }
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: errors
+        });
+      }
+      
+      throw createError;
+    }
 
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      // Agar validation error ho to batayega kaunsa field missing hai
-      errors: error.errors 
+    console.error("Issue certificate error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to issue certificate",
+      error: error.message
     });
   }
 };

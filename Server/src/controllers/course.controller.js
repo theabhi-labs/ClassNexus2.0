@@ -23,55 +23,116 @@ import { asyncHandler } from "../utils/async-handler.js";
     syllabus,
   } = req.body;
 
-  // ✅ Strict Validation
-  if (
-    [title, thumbnail, shortDescription, description].some(
-      (field) => !field || field.trim() === ""
-    ) ||
-    !price ||
-    !duration?.value
-  ) {
-    throw new ApiError(
-      400,
-      "Title, Thumbnail, Short Description, Description, Price and Duration are required"
-    );
+  // Validate required fields
+  const requiredFields = [
+    { field: title, name: "Title" },
+    { field: shortDescription, name: "Short description" },
+    { field: description, name: "Description" },
+    { field: price, name: "Price" },
+    { field: duration?.value, name: "Duration value" },
+    { field: duration?.unit, name: "Duration unit" },
+  ];
+
+  for (const { field, name } of requiredFields) {
+    if (!field) {
+      throw new ApiError(400, `${name} is required`);
+    }
   }
 
-  // ✅ Create Course
-  const course = await Course.create({
-    title,
-    thumbnail, // matches schema
-    shortDescription,
-    description, // matches schema
-    price: Number(price),
-    duration: {
-      value: Number(duration.value),
-      unit: duration.unit || "months",
-    },
-    level: level || "Beginner",
-    language: language || "Hindi",
-    mode: mode || "Offline",
-    certificateProvided:
-      typeof certificateProvided === "boolean"
-        ? certificateProvided
-        : true,
-    projectsIncluded: Number(projectsIncluded) || 0,
-    maxStudents: Number(maxStudents) || 0,
-    skillsYouLearn: Array.isArray(skillsYouLearn) ? skillsYouLearn : [],
-    careerOpportunities: Array.isArray(careerOpportunities)
-      ? careerOpportunities
-      : [],
-    syllabus: Array.isArray(syllabus) ? syllabus : [],
-    // createdBy: req.user?._id
-  });
-
-  if (!course) {
-    throw new ApiError(500, "Something went wrong while creating the course");
+  // Validate title length
+  if (title.length > 100) {
+    throw new ApiError(400, "Title must be under 100 characters");
   }
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, course, "Course created successfully"));
+  // Validate short description length
+  if (shortDescription.length > 200) {
+    throw new ApiError(400, "Short description must be under 200 characters");
+  }
+
+  // Validate duration unit
+  const validUnits = ["days", "weeks", "months"];
+  if (!validUnits.includes(duration.unit.toLowerCase())) {
+    throw new ApiError(400, "Duration unit must be days, weeks, or months");
+  }
+
+  // Validate duration value
+  if (duration.value < 1) {
+    throw new ApiError(400, "Duration value must be at least 1");
+  }
+
+  // Validate level if provided
+  const validLevels = ["Beginner", "Intermediate", "Advanced"];
+  if (level && !validLevels.includes(level)) {
+    throw new ApiError(400, "Level must be Beginner, Intermediate, or Advanced");
+  }
+
+  // Validate mode if provided
+  const validModes = ["Online", "Offline", "Hybrid"];
+  if (mode && !validModes.includes(mode)) {
+    throw new ApiError(400, "Mode must be Online, Offline, or Hybrid");
+  }
+
+  // Validate price
+  if (price < 0) {
+    throw new ApiError(400, "Price cannot be negative");
+  }
+
+  // Check for duplicate course title
+  const existingCourse = await Course.findOne({ title: title.trim() });
+  if (existingCourse) {
+    throw new ApiError(400, "A course with this title already exists");
+  }
+
+  try {
+    // Prepare course data
+    const courseData = {
+      title: title.trim(),
+      thumbnail: thumbnail?.trim(),
+      shortDescription: shortDescription.trim(),
+      description: description.trim(),
+      price: Number(price),
+      duration: {
+        value: Number(duration.value),
+        unit: duration.unit.toLowerCase(),
+      },
+      level: level || "Beginner",
+      language: language || "Hindi",
+      mode: mode || "Offline",
+      certificateProvided: certificateProvided === true || certificateProvided === "true",
+      projectsIncluded: Number(projectsIncluded) || 0,
+      maxStudents: Number(maxStudents) || 50,
+      skillsYouLearn: Array.isArray(skillsYouLearn) ? skillsYouLearn : [],
+      careerOpportunities: Array.isArray(careerOpportunities) ? careerOpportunities : [],
+      syllabus: Array.isArray(syllabus) ? syllabus : [],
+      createdBy: req.user?._id, // Get from auth middleware
+    };
+
+    // Create course
+    const course = await Course.create(courseData);
+
+    return res
+      .status(201)
+      .json(
+        new ApiResponse(201, course, "Course created successfully")
+      );
+  } catch (error) {
+    console.error("Course creation error:", error);
+
+    // Handle Mongoose validation errors
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map(
+        (val) => val.message
+      );
+      throw new ApiError(400, `Validation failed: ${messages.join(", ")}`);
+    }
+
+    // Handle duplicate key error
+    if (error.code === 11000) {
+      throw new ApiError(400, "A course with this title or slug already exists");
+    }
+
+    throw new ApiError(500, error.message || "Internal server error");
+  }
 });
 
 // --- UPDATE COURSE ---
@@ -117,7 +178,7 @@ const updateCourse = asyncHandler(async (req, res) => {
         : existingCourse.projectsIncluded,
 
     maxStudents:
-      req.body.maxStudents !== undefined
+      (req.body.maxStudents !== undefined && req.body.maxStudents !== "")
         ? Number(req.body.maxStudents)
         : existingCourse.maxStudents,
 
